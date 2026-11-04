@@ -686,6 +686,43 @@
     .f1 .d-top, .f1 .tabs-wrap, .f1 .d-next, .f1 .d-menu { display: none !important; }
     .f1 .section { min-height: 0; }
   }
+  /* ── Tests : région → pathologie → tests ── */
+  .tt-mode { display: flex; gap: 4px; padding: 3px; border-radius: 13px; background: var(--paper-2); width: max-content; max-width: 100%; }
+  .tt-mode-btn { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-soft); font-size: 14px; font-weight: 500; }
+  .tt-mode-btn:hover { color: var(--ink); }
+  .tt-mode-btn.on { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(42, 38, 34, 0.14); }
+  .tp-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; max-width: 820px; }
+  @media (pointer: coarse) { .tt-controls .chip, #testsBody .count .chip { min-height: 44px; } }
+  .tp { min-width: 0; background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r-sm); transition: border-color .15s, box-shadow .15s; }
+  .tp.open { border-color: var(--accent); box-shadow: 0 10px 24px -18px rgba(42, 38, 34, .5); }
+  .tp-head { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 10px 12px 10px 14px; background: none; border: 0; border-radius: var(--r-sm); text-align: left; color: inherit; }
+  .tp-main { flex: 1; min-width: 0; }
+  .tp-name { display: block; font-family: 'Fraunces', serif; font-size: 15.5px; font-weight: 600; line-height: 1.25; color: var(--ink); overflow-wrap: anywhere; }
+  .tp-sub { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp.open .tp-sub { display: none; }
+  .tp-nb { flex-shrink: 0; font-size: 11.5px; font-weight: 600; white-space: nowrap; color: var(--accent-ink); background: var(--accent-soft); border-radius: 100px; padding: 3px 9px; }
+  .tp.open > .tp-head .tc-chev { transform: rotate(180deg); color: var(--accent); }
+  .tp-body { padding: 0 14px 6px; border-top: 1px solid var(--line-soft); animation: fadein .2s ease; }
+  .tr-list { list-style: none; }
+  .tr + .tr { border-top: 1px solid var(--line-soft); }
+  .tr-head { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 50px; padding: 8px 0; background: none; border: 0; text-align: left; color: inherit; }
+  .tr-main { flex: 1; min-width: 0; }
+  .tr-name { display: block; font-size: 14.5px; font-weight: 600; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
+  .tr-sesp { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-soft); }
+  .tr-sesp b { font-weight: 600; color: var(--ink); }
+  .tr .tc-chev { width: 16px; height: 16px; }
+  .tr.open > .tr-head .tc-chev { transform: rotate(180deg); color: var(--accent); }
+  .tr-body { padding: 0 0 12px; }
+  .tr-body .tc-note { font-size: 14px; }
+  .tr-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tr-acts .chip { min-height: 44px; padding: 0 14px; }
+  @media (max-width: 600px) {
+    .tt-controls .filter-row { flex-wrap: nowrap; overflow-x: auto; margin: 0 -20px; padding: 2px 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .tt-controls .filter-row::-webkit-scrollbar { display: none; }
+    .tt-controls .filter-row .chip { flex-shrink: 0; }
+    .tt-mode { width: 100%; }
+    .tt-mode-btn { flex: 1; }
+  }
 </style>
 </head>
 <body>
@@ -1956,7 +1993,7 @@ function tIndex() {
 
 // ── Vue « Tests » : filtres, recherche, cartes dépliables ──
 function tState() {
-  if (!state.tests) state.tests = { q: '', zone: 'Toutes', type: 'all', open: {}, y: 0 };
+  if (!state.tests) state.tests = { q: '', zone: 'Toutes', type: 'all', mode: 'patho', open: {}, openP: {}, openT: {}, y: 0 };
   return state.tests;
 }
 function tTypeOf(k) { for (var i = 0; i < T_TYPES.length; i++) if (T_TYPES[i].k === k) return T_TYPES[i]; return T_TYPES[0]; }
@@ -2093,6 +2130,88 @@ function tOpenFiche(id, i) {
 }
 // Cartes « Tests cliniques » de la région choisie (écran de départ des cartes, filtres déjà posés)
 function tToFlash() { state.flashZone = tState().zone; state.flashCat = 'Tests cliniques'; setView('flash'); }
+
+// ── Classement par pathologie : région → pathologie (fiche) → tests dans l'ordre de la fiche ──
+var _tItemTypes = null;
+function tItemTypes() {
+  if (_tItemTypes) return _tItemTypes;
+  var m = {};
+  tIndex().forEach(function (g) { g.items.forEach(function (x) { var k = x.f.id + '|' + x.i; if (!m[k]) m[k] = []; if (m[k].indexOf(g.type) < 0) m[k].push(g.type); }); });
+  _tItemTypes = m;
+  return m;
+}
+function tPathoItems(f, type) {
+  var T = f.onglets && f.onglets.tests, ty = tItemTypes();
+  return ((T && T.items) || []).map(function (t, i) { return { f: f, t: t, i: i }; })
+    .filter(function (x) { return type === 'all' || (ty[x.f.id + '|' + x.i] || []).indexOf(type) > -1; });
+}
+function tPid(z, f) { return 'tp-' + ZONE_ORDER_DISPLAY.indexOf(z) + '-' + f.id; }
+function tPathoHTML(S) {
+  var h = '';
+  (S.zone === 'Toutes' ? ZONE_ORDER_DISPLAY : [S.zone]).forEach(function (z) {
+    var fs = ALL_FICHES.filter(function (f) { return !f.stub && ficheInZone(f, z); })
+      .map(function (f) { return { f: f, items: tPathoItems(f, S.type) }; })
+      .filter(function (e) { return e.items.length; })
+      .sort(function (a, b) { return a.f.nom.localeCompare(b.f.nom, 'fr', { sensitivity: 'base' }); });
+    if (!fs.length) return;
+    h += '<section class="tt-zone"><div class="zone-head"><span class="zone-icon" aria-hidden="true">' + (ZONE_ICONS[z] || '📌') + '</span><h2 class="zone-name">' + esc(z) + '</h2><span class="zone-count">' + fs.length + ' pathologie' + (fs.length > 1 ? 's' : '') + '</span><span class="lvl-line"></span></div><div class="tp-list">';
+    fs.forEach(function (e) {
+      var id = z + '|' + e.f.id, open = !!S.openP[id], did = tPid(z, e.f);
+      h += '<div class="tp' + (open ? ' open' : '') + '" data-pid="' + esc(id) + '">' +
+        '<button class="tp-head" type="button" aria-expanded="' + open + '" aria-controls="' + did + '" onclick="tpToggle(this)">' +
+        '<span class="tp-main"><span class="tp-name">' + esc(e.f.nom) + '</span><span class="tp-sub">' + esc(e.items.map(function (x) { return x.t.nom; }).join(' · ')) + '</span></span>' +
+        '<span class="tp-nb">' + e.items.length + ' test' + (e.items.length > 1 ? 's' : '') + '</span>' +
+        '<svg class="icon tc-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>' +
+        (open ? tpBody(e.f, e.items, did) : '') + '</div>';
+    });
+    h += '</div></section>';
+  });
+  return h;
+}
+function tpBody(f, items, did) {
+  var S = tState();
+  return '<div class="tp-body" id="' + did + '"><ul class="tr-list">' + items.map(function (x) {
+    var rid = f.id + '|' + x.i, open = !!S.openT[rid], se = tSeSp(x.t.se), sp = tSeSp(x.t.sp), bid = 'tr-' + f.id + '-' + x.i;
+    return '<li class="tr' + (open ? ' open' : '') + '" data-rid="' + esc(rid) + '"><button class="tr-head" type="button" aria-expanded="' + open + '" aria-controls="' + bid + '" onclick="trToggle(this)">' +
+      '<span class="tr-main"><span class="tr-name">' + esc(x.t.nom) + '</span>' +
+      (se || sp ? '<span class="tr-sesp">' + (se ? 'Se <b>' + esc(se) + '</b>' : '') + (se && sp ? ' · ' : '') + (sp ? 'Sp <b>' + esc(sp) + '</b>' : '') + '</span>' : '') + '</span>' +
+      '<svg class="icon tc-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>' +
+      (open ? trBody(f, x, bid) : '') + '</li>';
+  }).join('') + '</ul></div>';
+}
+function trBody(f, x, bid) {
+  var ty = tItemTypes()[f.id + '|' + x.i] || [], img = ty.indexOf('dx') > -1 || ty.indexOf('mes') > -1;
+  var term = String(x.t.nom).replace(/\([^)]*\)/g, ' ').replace(/'/g, ' ').replace(/\s+/g, ' ').trim();
+  var note = String(x.t.note || '').trim();
+  return '<div class="tr-body" id="' + bid + '">' + (note ? '<div class="tc-note">' + tNote(note, null) + '</div>' : '') +
+    '<div class="tr-acts"><button class="chip" type="button" onclick="tOpenFiche(\'' + f.id + '\',' + x.i + ')">Voir dans la fiche ›</button>' +
+    (img ? '<button class="chip tc-img" type="button" onclick="searchImg(\'' + esc(term) + ' test clinique\')">🖼 Voir des images</button>' : '') + '</div></div>';
+}
+function tpToggle(btn) {
+  var el = btn.closest('.tp'), id = el.getAttribute('data-pid'), S = tState(), open = !S.openP[id];
+  if (open) S.openP[id] = 1; else delete S.openP[id];
+  el.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  var old = el.querySelector('.tp-body');
+  if (old) el.removeChild(old);
+  if (!open) return;
+  var cut = id.indexOf('|'), z = id.slice(0, cut), fid = id.slice(cut + 1);
+  var f = ALL_FICHES.find(function (x) { return x.id === fid; });
+  if (f) el.insertAdjacentHTML('beforeend', tpBody(f, tPathoItems(f, S.type), tPid(z, f)));
+}
+function trToggle(btn) {
+  var el = btn.closest('.tr'), id = el.getAttribute('data-rid'), S = tState(), open = !S.openT[id];
+  if (open) S.openT[id] = 1; else delete S.openT[id];
+  el.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  var old = el.querySelector('.tr-body');
+  if (old) el.removeChild(old);
+  if (!open) return;
+  var cut = id.lastIndexOf('|'), fid = id.slice(0, cut), i = +id.slice(cut + 1);
+  var f = ALL_FICHES.find(function (x) { return x.id === fid; });
+  if (f) el.insertAdjacentHTML('beforeend', trBody(f, { f: f, t: f.onglets.tests.items[i], i: i }, 'tr-' + fid + '-' + i));
+}
+function tSetMode(m) { var S = tState(); S.mode = m; renderTestsFilters(); renderTestsBody(); }
 function tSetZone(z) { tState().zone = z; renderTestsFilters(); renderTestsBody(); }
 function tSetType(k) { tState().type = k; renderTestsFilters(); renderTestsBody(); }
 function tSetQuery(v) { tState().q = v; var c = document.querySelector('.search-clear'); if (c) c.hidden = !v; renderTestsBody(); }
@@ -2103,11 +2222,11 @@ function renderTests(app) {
   app.innerHTML =
     '<div class="topbar"><div class="eyebrow">Examen clinique</div>' +
     '<h1 class="h1">Tests <em>cliniques</em></h1>' +
-    '<p class="sub">Les ' + L.length + ' tests, mesures et scores de ' + nF + ' fiches, rangés par région comme à l\'examen. Touche un test pour voir comment le faire, ce qu\'il recherche et les fiches où il sert.</p></div>' +
-    '<div class="controls"><div class="searchbox"><svg class="icon si" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
+    '<p class="sub">Les ' + L.length + ' tests, mesures et scores de ' + nF + ' fiches, rangés par région puis par pathologie : touche une pathologie, puis un test pour voir comment le faire.</p></div>' +
+    '<div class="controls tt-controls"><div class="searchbox"><svg class="icon si" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
     '<input type="text" id="searchInput" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Rechercher un test" placeholder="Test, manœuvre, structure, pathologie…" value="' + esc(S.q) + '">' +
     '<button class="search-clear" type="button" aria-label="Effacer la recherche" onclick="var i=document.getElementById(\'searchInput\');i.value=\'\';tSetQuery(\'\');i.focus()"' + (S.q ? '' : ' hidden') + '>✕</button>' +
-    '</div><div class="filter-row tt-types" id="ttTypes" role="group" aria-label="Type de test"></div>' +
+    '</div><div class="tt-mode" id="ttMode" role="group" aria-label="Classement des tests"></div><div class="filter-row tt-types" id="ttTypes" role="group" aria-label="Type de test"></div>' +
     '<div class="filter-row" id="ttZones" role="group" aria-label="Région"></div></div><div id="testsBody"></div>';
   var si = document.getElementById('searchInput');
   si.addEventListener('input', function (e) { tSetQuery(e.target.value); });
@@ -2118,7 +2237,11 @@ function renderTests(app) {
 function renderTestsFilters() {
   var S = tState(), L = tIndex();
   var inZ = L.filter(function (g) { return tInZone(g, S.zone); });
-  var tr = document.getElementById('ttTypes'), zr = document.getElementById('ttZones');
+  var tr = document.getElementById('ttTypes'), zr = document.getElementById('ttZones'), mr = document.getElementById('ttMode');
+  if (mr) mr.innerHTML = [['patho', 'Par pathologie'], ['test', 'Par test']].map(function (m) {
+    var on = (S.mode || 'patho') === m[0];
+    return '<button type="button" class="tt-mode-btn' + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="tSetMode(\'' + m[0] + '\')">' + m[1] + '</button>';
+  }).join('');
   if (tr) tr.innerHTML = [{ k: 'all', short: 'Tous', ico: '' }].concat(T_TYPES).map(function (t) {
     var n = t.k === 'all' ? inZ.length : inZ.filter(function (g) { return g.type === t.k; }).length;
     return '<button class="chip' + (S.type === t.k ? ' on' : '') + '" aria-pressed="' + (S.type === t.k ? 'true' : 'false') + '" onclick="tSetType(\'' + t.k + '\')"' + (!n && S.type !== t.k ? ' disabled' : '') + (t.label ? ' title="' + esc(t.label) + '"' : '') + '>' + (t.ico ? '<span aria-hidden="true">' + t.ico + '</span> ' : '') + t.short + ' <span class="tt-n">' + n + '</span></button>';
@@ -2145,7 +2268,8 @@ function renderTestsBody() {
   } else {
     html += '<div class="count"><span aria-hidden="true">🩺</span> ' + pool.length + ' test' + (pool.length > 1 ? 's' : '') + reset + '<button class="chip tt-flash" onclick="tToFlash()"><span aria-hidden="true">🗂</span> Réviser en cartes</button></div>';
     if (!pool.length) html += '<div class="empty"><p>Aucun test ne correspond.</p></div>';
-    (S.zone === 'Toutes' ? ZONE_ORDER_DISPLAY : [S.zone]).forEach(function (z) {
+    if (S.mode !== 'test') html += tPathoHTML(S);
+    else (S.zone === 'Toutes' ? ZONE_ORDER_DISPLAY : [S.zone]).forEach(function (z) {
       var gs = S.zone === 'Toutes' ? pool.filter(function (g) { return g.zones.indexOf(z) > -1; }) : pool;
       if (!gs.length) return;
       html += '<section class="tt-zone"><div class="zone-head"><span class="zone-icon" aria-hidden="true">' + (ZONE_ICONS[z] || '📌') + '</span><h2 class="zone-name">' + esc(z) + '</h2><span class="zone-count">' + gs.length + ' test' + (gs.length > 1 ? 's' : '') + '</span><span class="lvl-line"></span></div>';
@@ -2958,7 +3082,7 @@ function switchTab(key, tabEl) {
 // ════════════════════════════════════════════════════════════
 //  PROGRESSION · SAUVEGARDE · INSTALLATION (app hors ligne)
 // ════════════════════════════════════════════════════════════
-var APP_VERSION = '2026-11-01';
+var APP_VERSION = '2026-11-04';
 var installPromptEvt = null;
 
 function isStandalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
