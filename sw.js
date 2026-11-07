@@ -1,14 +1,24 @@
 /* Service worker — Fiches Kiné : utilisation hors ligne.
-   La page est chargée depuis le réseau quand il est disponible (mises à jour immédiates),
-   sinon depuis le cache. Icônes et manifeste : cache d'abord. Polices : cache puis mise à jour. */
-const VERSION = 'fiches-kine-2026-11-04-75ccde06';
+   Tous les fichiers de l'app sont gardés ensemble, sous un même numéro de VERSION :
+   l'app s'ouvre toujours tout de suite, avec des fichiers qui vont ensemble.
+   À chaque modification de l'app : changer VERSION ici ET <meta name="app-version"> dans index.html
+   (même valeur ; « node tools/check.js » vérifie). Le navigateur installe alors la nouvelle version
+   en arrière-plan et la page affiche le bandeau « Nouvelle version disponible ». */
+const VERSION = 'fiches-kine-2026-11-07-v2e3';
 const FONTS = 'fiches-kine-fonts';
-const CORE = ['index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'];
-const SCOPE_PATH = new URL(self.registration.scope).pathname;
+const CORE = [
+  './', 'index.html', 'manifest.webmanifest', 'css/app.css',
+  'data/fiches.js', 'data/cas.js',
+  'js/core.js', 'js/quiz-cartes.js', 'js/recherche.js', 'js/tests.js', 'js/vues.js', 'js/apprentissage.js', 'js/progression.js',
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'
+];
 const PAGE = new URL('index.html', self.registration.scope).href;
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
+  // cache: 'reload' : on ignore le cache HTTP pour être sûr d'avoir les fichiers de cette version
+  event.waitUntil(caches.open(VERSION)
+    .then(cache => cache.addAll(CORE.map(u => new Request(u, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
@@ -24,35 +34,13 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
-    if (req.mode === 'navigate') {
-      if (url.pathname !== SCOPE_PATH && url.pathname !== SCOPE_PATH + 'index.html') return;
-      // Réseau lancé tout de suite ; la copie en cache est terminée avant la fin de vie de l'événement
-      let done = () => {};
-      event.waitUntil(new Promise(resolve => { done = resolve; }));
-      const network = fetch(req).then(res => {
-        if (res && res.ok && res.type === 'basic') {
-          const copy = res.clone();
-          caches.open(VERSION).then(c => c.put(PAGE, copy)).then(done, done);
-        } else done();
-        return res;
-      }, err => { done(); throw err; });
-      event.respondWith(appPage(network));
-      return;
-    }
+    // Page (avec ou sans #/adresse) : copie en cache, sinon réseau
+    if (req.mode === 'navigate') { event.respondWith(caches.match(PAGE).then(c => c || fetch(req))); return; }
     event.respondWith(cacheFirst(req));
     return;
   }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') event.respondWith(fonts(req));
 });
-
-// Page : réseau d'abord ; cache si hors ligne, erreur serveur, ou réseau plus lent que 3,5 s
-async function appPage(network) {
-  const cached = await caches.match(PAGE);
-  if (!cached) return network;
-  const fresh = network.then(res => (res && res.ok ? res : cached), () => cached);
-  const slow = new Promise(resolve => setTimeout(() => resolve(cached), 3500));
-  return Promise.race([fresh, slow]);
-}
 
 async function cacheFirst(req) {
   const cached = await caches.match(req, { ignoreSearch: true });
