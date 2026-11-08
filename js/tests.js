@@ -435,6 +435,8 @@ function renderTests(app) {
     '<div class="topbar"><div class="eyebrow">Examen clinique</div>' +
     '<h1 class="h1">Tests <em>cliniques</em></h1>' +
     '<p class="sub">Les ' + L.length + ' tests, mesures et scores de ' + nF + ' fiches, rangés par région puis par pathologie : touche une pathologie, puis un test pour voir comment le faire.</p></div>' +
+    // Carte « Méthode du bilan » (js/bilan.js + data/bilan.js) ; absente si ces fichiers manquent
+    (typeof bilanEntryHTML === 'function' && typeof BILAN_GUIDE !== 'undefined' ? bilanEntryHTML() : '') +
     '<div class="controls tt-controls"><div class="searchbox"><svg class="icon si" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
     '<input type="text" id="searchInput" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Rechercher un test" placeholder="Test, manœuvre, structure, pathologie…" value="' + esc(S.q) + '">' +
     '<button class="search-clear" type="button" aria-label="Effacer la recherche" ' + act('tClearSearch') + '' + (S.q ? '' : ' hidden') + '>✕</button>' +

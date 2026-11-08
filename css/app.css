@@ -805,3 +805,43 @@ body.dark .f1 .flag-yellow .flag-head { color: var(--gold); }
 .hist-s { font-weight: 600; font-variant-numeric: tabular-nums; }
 /* Texte des nouveaux écrans : couleur explicite (sinon trop sombre en mode sombre) */
 .today, .today-main, .today-stat, .train-grid, .srs-home, .fiche-train, .zbars, .hist, .grade-row, .quiz-errs, .today-tile, .train-tile { color: var(--ink); }
+/* ── Guide « Faire un bilan » (Tests → Méthode du bilan) ── */
+.bm-entry { width: 100%; max-width: 820px; min-height: 76px; margin: 0 0 18px; }
+.bm-entry .train-txt { flex: 1; min-width: 0; }
+.bm-entry > .icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--accent); stroke-width: 2.2; }
+.bilan .d-title em { font-style: italic; color: var(--accent); }
+.bilan .tab-num { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; font-size: 12px; font-weight: 600; background: var(--paper-2); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.bilan .tab.on .tab-num { background: var(--accent); color: var(--paper); }
+.b-steps { list-style: none; display: grid; gap: 8px; margin: 0 0 14px; }
+.b-step { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: var(--r-sm); background: var(--card); color: var(--ink); text-align: left; }
+@media (hover: hover) { .b-step:hover { border-color: var(--accent); } }
+.b-step-n { flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 16px; background: var(--accent-soft); color: var(--accent-ink); font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; }
+.b-step-main { flex: 1; min-width: 0; }
+.b-step-t { display: block; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; line-height: 1.25; color: var(--ink); }
+.b-step-d { display: block; margin-top: 2px; font-size: 13.5px; line-height: 1.45; color: var(--ink-soft); }
+.b-step > .icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--ink-soft); }
+.b-quote { font-style: italic; }
+.b-tools { margin: 0; }
+.b-tool { padding: 10px 0; border-top: 1px solid var(--line-soft); }
+.b-tool:first-child { border-top: 0; padding-top: 2px; }
+.b-tool dt { font-weight: 600; font-size: 15px; color: var(--ink); }
+.b-tool dd { margin: 3px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); max-width: 82ch; }
+.b-cif-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 10px 0; border-top: 1px solid var(--line-soft); }
+.b-cif-row:first-child { border-top: 0; padding-top: 2px; }
+.b-cif-k { font-weight: 600; font-size: 15px; color: var(--ink); }
+.b-cif-d { display: block; font-weight: 400; font-size: 13px; color: var(--ink-soft); }
+.b-cif-ex { font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+@media (min-width: 720px) { .b-cif-row { grid-template-columns: 220px minmax(0, 1fr); gap: 16px; } }
+.b-cards { display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .b-cards { grid-template-columns: 1fr 1fr; gap: 0 12px; } }
+.b-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.b-links .chip, .b-tpl-head .chip { min-height: 44px; padding: 0 16px; }
+.b-tpl-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.bilan .b-tpl-head .block-title { margin: 0; }
+.b-pre { margin: 0; padding: 14px; border-radius: 10px; background: var(--paper-2); color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.b-src { list-style: none; }
+.b-src li { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line-soft); font-size: 14px; line-height: 1.45; color: var(--ink); }
+.b-src li:first-child { border-top: 0; }
+.b-src li > span { min-width: 0; overflow-wrap: anywhere; }
+.b-src .src-link { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
+@media print { .b-tpl-head .chip, .b-links, .bm-entry { display: none !important; } }

@@ -1,11 +1,13 @@
 /* Contrôle Fiches Kiné : lancer « node tools/check.js » avant chaque mise en ligne.
    Vérifie que le contenu médical n'a pas changé (empreinte), que le code se charge,
-   et que le quiz et les cartes se génèrent. N'écrit rien. */
+   que le quiz et les cartes se génèrent, et que le guide du bilan est intact. N'écrit rien. */
 const fs = require('fs'), path = require('path'), vm = require('vm'), crypto = require('crypto');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 // Empreinte de référence du contenu (fiches + cas), fixée le 07/11/2026
 const REF = '2ca11fe800448556';
+// Empreinte du guide « Faire un bilan » (data/bilan.js), fixée le 08/11/2026 : à changer après une modification voulue
+const REF_BILAN = '4daf02603a010b68';
 const dataLines = ['data/fiches.js', 'data/cas.js'].map(f => read(f).split('\n').find(l => /^const (ALL_FICHES|CAS_CLINIQUES) = /.test(l)));
 const hash = crypto.createHash('sha256').update(dataLines.join('\n') + '\n').digest('hex').slice(0, 16);
 let ok = true;
@@ -28,6 +30,15 @@ try {
   say(r.fiches === 87 && r.cas === 57, r.fiches + ' fiches, ' + r.cas + ' cas cliniques');
   say(r.quiz > 850, r.quiz + ' questions de quiz générées');
   say(r.cartes > 2000, r.cartes + ' cartes générées');
+  // Guide du bilan : contenu inchangé, étapes et liens qui mènent quelque part
+  const g = vm.runInContext('({ json: JSON.stringify(BILAN_GUIDE), keys: BILAN_GUIDE.tabs.map(t => t.key), ids: ALL_FICHES.map(f => f.id) })', ctx);
+  const hB = crypto.createHash('sha256').update(g.json).digest('hex').slice(0, 16), G = JSON.parse(g.json), bad = [];
+  say(hB === REF_BILAN, 'Guide du bilan ' + (hB === REF_BILAN ? 'inchangé' : 'MODIFIÉ (empreinte ' + hB + ', attendue ' + REF_BILAN + ')'));
+  G.tabs.forEach(t => t.parts.forEach(p => {
+    if (p.t === 'steps') p.items.forEach(s => { if (!g.keys.includes(s.key)) bad.push('étape « ' + s.key + ' »'); });
+    if (p.t === 'links') p.items.forEach(l => { const id = l.action.startsWith('fiche:') ? l.action.slice(6) : ''; if (l.action !== 'tests' && !g.ids.includes(id)) bad.push('lien « ' + l.action + ' »'); });
+  }));
+  say(!bad.length, G.tabs.length + ' sections dans le guide du bilan' + (bad.length ? ', liens cassés : ' + bad.join(', ') : ', liens valides'));
 } catch (e) { say(false, 'Erreur au chargement : ' + e.message); }
 // Même numéro de version dans sw.js et index.html
 const vSw = (read('sw.js').match(/const VERSION = '([^']+)'/) || [])[1];

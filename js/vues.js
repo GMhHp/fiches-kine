@@ -5,8 +5,8 @@
 // Dessine l'écran courant puis met l'adresse (#/…) à jour pour le bouton retour
 function render() { renderView(); syncRoute(); }
 function renderView() {
-  // Quiz, Cartes, Cas et Examen sont regroupés sous « S'entraîner » dans la barre
-  var navOf = { quiz: 'train', flash: 'train', cas: 'train', train: 'train' };
+  // Quiz, Cartes, Cas et Examen sont regroupés sous « S'entraîner » dans la barre ; le guide du bilan sous « Tests »
+  var navOf = { quiz: 'train', flash: 'train', cas: 'train', train: 'train', bilan: 'tests' };
   ["today", "fiches", "tests", "train", "prog"].forEach(v => { var el=document.getElementById("tab-"+v); if(el) { var on = (navOf[state.view] || state.view) === v; el.classList.toggle("on", on); if (on) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current"); } });
   const app = document.getElementById("app");
   if (state.view === "today") return renderToday(app);
@@ -16,6 +16,7 @@ function renderView() {
   if (state.view === "flash") return renderFlash(app);
   if (state.view === "prog") return renderProg(app);
   if (state.view === "tests" && !state.openId) return renderTests(app);
+  if (state.view === "bilan" && !state.openId) return renderBilan(app);
   if (state.openId) return renderDetail(app, ALL_FICHES.find(f => f.id === state.openId));
   return renderFichesList(app);
 }
@@ -170,8 +171,8 @@ function renderDetail(app, f) {
   if (!detailTab || !tabs.find(t => t.key === detailTab)) detailTab = tabs[0].key;
   const N = NIVEAUX[f.niveau];
   const fav = state.favs.has(f.id), mast = state.mastered.has(f.id);
-  const hl = state.view === "tests" ? tState().q.trim() : state.query.trim();
-  const listLbl = state.view === 'tests' ? 'Tests cliniques' : 'Toutes les pathologies';
+  const hl = state.view === "tests" ? tState().q.trim() : state.view === "bilan" ? "" : state.query.trim();
+  const listLbl = state.view === 'tests' ? 'Tests cliniques' : state.view === 'bilan' ? 'Méthode du bilan' : 'Toutes les pathologies';
   const nomQ = esc(f.nom).replace(/'/g, "");
 
   const nav = state.ficheHistory.length
@@ -752,7 +753,7 @@ function fabSearchClick() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(function(){ si.focus(); }, 400);
   } else {
-    setView(state.view === 'tests' ? 'tests' : 'fiches');
+    setView(state.view === 'tests' || state.view === 'bilan' ? 'tests' : 'fiches');
     setTimeout(function(){
       window.scrollTo({ top: 0, behavior: 'smooth' });
       var si2 = document.getElementById('searchInput');

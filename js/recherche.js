@@ -119,7 +119,9 @@ function openFicheAt(id, tab) {
 //  ACTIONS
 // ════════════════════════════════════════════════════════════
 function setView(v) { state.view = v; state.openId = null; state.ficheHistory = []; if (v !== "quiz") state.quiz = null; if (v !== "flash") state.flash = null; render(); window.scrollTo(0, 0); }
-function openFiche(id, keepHistory) { if (!keepHistory) state.ficheHistory = []; if (!(keepHistory && state.view === "tests")) state.view = "fiches"; state.openId = id; render(); window.scrollTo(0, 0); }
+// Fiche ouverte depuis Tests ou depuis le guide du bilan : on y reste (le bouton retour y ramène)
+function inSubView() { return state.view === "tests" || state.view === "bilan"; }
+function openFiche(id, keepHistory) { if (!keepHistory) state.ficheHistory = []; if (!(keepHistory && inSubView())) state.view = "fiches"; state.openId = id; render(); window.scrollTo(0, 0); }
 function goFiche(id) {
   if (!ALL_FICHES.some(function (x) { return x.id === id; })) return;
   if (state.openId) state.ficheHistory.push({ id: state.openId, tab: detailTab, y: window.scrollY });
@@ -129,31 +131,40 @@ function goFiche(id) {
 function backFiche() {
   var prev = state.ficheHistory.pop();
   if (!prev) { closeFiche(); return; }
-  if (state.view !== "tests") state.view = "fiches"; state.openId = prev.id; detailTab = prev.tab; render();
+  if (!inSubView()) state.view = "fiches"; state.openId = prev.id; detailTab = prev.tab; render();
   window.scrollTo(0, prev.y || 0);
 }
-// Fermer la fiche : retour à la liste d'où on vient (pathologies ou tests, à la même position)
+// Fermer la fiche : retour à l'écran d'où on vient (pathologies, tests ou guide du bilan, à la même position)
 function closeFiche() {
   state.ficheHistory = []; state.openId = null; render();
   if (state.view === "tests" && state.tests) window.scrollTo(0, state.tests.y || 0);
+  else if (state.view === "bilan") window.scrollTo(0, state.bilanY || 0);
 }
 // ════════════════════════════════════════════════════════════
 //  ADRESSES (#/…) : bouton retour Android / geste retour iPhone, lien direct, rechargement
 // ════════════════════════════════════════════════════════════
 // #/fiches · #/fiches/<id>/<onglet> · #/tests · #/tests/<id> · #/quiz · #/cartes · #/cas · #/progression
-var ROUTE_VIEWS = { aujourdhui: 'today', fiches: 'fiches', tests: 'tests', quiz: 'quiz', cartes: 'flash', cas: 'cas', entrainer: 'train', progression: 'prog' };
+// #/bilan/<section> · #/bilan/<section>/<id>/<onglet> (fiche ouverte depuis le guide du bilan)
+var ROUTE_VIEWS = { aujourdhui: 'today', fiches: 'fiches', tests: 'tests', bilan: 'bilan', quiz: 'quiz', cartes: 'flash', cas: 'cas', entrainer: 'train', progression: 'prog' };
 var _routing = false, _lastRoute = null;
 function routeOf() {
   var name = Object.keys(ROUTE_VIEWS).find(function (k) { return ROUTE_VIEWS[k] === state.view; }) || 'aujourdhui';
+  if (name === 'bilan') name += '/' + (state.bilanTab || 'apercu');
   return '#/' + name + (state.openId ? '/' + state.openId + (detailTab ? '/' + detailTab : '') : '');
+}
+// Partie de l'adresse qui désigne l'écran, sans l'onglet affiché
+function routeScreen(r) {
+  var p = r.split('/');
+  if (p[1] === 'bilan') return p.length > 3 ? p.slice(0, 4).join('/') : '#/bilan';
+  return p.slice(0, 3).join('/');
 }
 function syncRoute() {
   if (_routing) return;
   var r = routeOf();
   if (r !== location.hash) {
-    // Premier écran, ou simple changement d'onglet dans la même fiche : on remplace l'adresse
-    // (sinon le bouton retour repasserait par chaque onglet)
-    var same = _lastRoute && state.openId && _lastRoute.split('/').slice(0, 3).join('/') === r.split('/').slice(0, 3).join('/');
+    // Premier écran, ou simple changement d'onglet dans la même fiche (ou dans le guide du bilan) :
+    // on remplace l'adresse (sinon le bouton retour repasserait par chaque onglet)
+    var same = _lastRoute && (state.openId || state.view === 'bilan') && routeScreen(_lastRoute) === routeScreen(r);
     try { history[!_lastRoute || same ? 'replaceState' : 'pushState'](null, '', r); } catch (e) {}
   }
   _lastRoute = r;
@@ -161,7 +172,11 @@ function syncRoute() {
 function applyRoute() {
   var p = (location.hash || '').replace(/^#\/?/, '').split('/').map(function (x) { try { return decodeURIComponent(x); } catch (e) { return x; } });
   var v = ROUTE_VIEWS[p[0]] || 'today';
-  var id = (v === 'fiches' || v === 'tests') && ALL_FICHES.some(function (f) { return f.id === p[1]; }) ? p[1] : null;
+  // Guide du bilan : la section, puis éventuellement la fiche ouverte depuis le guide
+  if (v === 'bilan') { state.bilanTab = p[1] || 'apercu'; p.splice(1, 1); }
+  var id = (v === 'fiches' || v === 'tests' || v === 'bilan') && ALL_FICHES.some(function (f) { return f.id === p[1]; }) ? p[1] : null;
+  // Retour d'une fiche ouverte depuis le guide du bilan : on revient au même endroit du guide
+  var backToGuide = v === 'bilan' && !id && !!_lastRoute && routeScreen(_lastRoute).split('/').length === 4 && _lastRoute.indexOf('#/bilan/' + state.bilanTab + '/') === 0;
   var H = state.ficheHistory;
   if (!id) state.ficheHistory = [];
   else if (H.length && H[H.length - 1].id === id) H.pop();   // retour vers la fiche précédente
@@ -172,7 +187,7 @@ function applyRoute() {
   _routing = true;
   try { renderView(); } finally { _routing = false; }
   _lastRoute = routeOf();
-  window.scrollTo(0, 0);
+  window.scrollTo(0, backToGuide ? state.bilanY || 0 : 0);
 }
 window.addEventListener('popstate', applyRoute);
 
