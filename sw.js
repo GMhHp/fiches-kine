@@ -4,12 +4,12 @@
    À chaque modification de l'app : changer VERSION ici ET <meta name="app-version"> dans index.html
    (même valeur ; « node tools/check.js » vérifie). Le navigateur installe alors la nouvelle version
    en arrière-plan et la page affiche le bandeau « Nouvelle version disponible ». */
-const VERSION = 'fiches-kine-2026-11-07-v2e3';
+const VERSION = 'fiches-kine-2026-11-08-b4fc0410';
 const FONTS = 'fiches-kine-fonts';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'data/fiches.js', 'data/cas.js',
-  'js/core.js', 'js/quiz-cartes.js', 'js/recherche.js', 'js/tests.js', 'js/vues.js', 'js/apprentissage.js', 'js/progression.js',
+  'data/fiches.js', 'data/cas.js', 'data/bilan.js',
+  'js/core.js', 'js/quiz-cartes.js', 'js/recherche.js', 'js/tests.js', 'js/bilan.js', 'js/vues.js', 'js/apprentissage.js', 'js/progression.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'
 ];
 const PAGE = new URL('index.html', self.registration.scope).href;

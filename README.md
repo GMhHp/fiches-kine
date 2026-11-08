@@ -5,11 +5,13 @@ Application de révision en kinésithérapie (fiches cliniques, cartes à répé
 ## Contenu
 - `index.html` : la page de l'application (petite : elle charge les fichiers ci-dessous).
 - `data/fiches.js`, `data/cas.js` : **le contenu médical** (87 fiches, 57 cas cliniques).
+- `data/bilan.js` : le contenu du guide « Faire un bilan » (écran Tests → Méthode du bilan), sources comprises.
 - `js/` : le code de l'application.
   - `core.js` : réglages, mémoire de l'appareil, boutons.
   - `quiz-cartes.js` : fabrication des questions et des cartes à partir des fiches.
   - `recherche.js` : recherche, navigation, adresses (#/…) et bouton retour.
   - `tests.js` : écran Tests cliniques.
+  - `bilan.js` : guide « Faire un bilan », ouvert depuis l'écran Tests (adresses #/bilan/…).
   - `vues.js` : écrans Fiches, Quiz, Cartes, Cas.
   - `apprentissage.js` : répétition espacée, carnet d'erreurs, Aujourd'hui, S'entraîner, examen, statistiques.
   - `progression.js` : Progression, sauvegarde, installation, démarrage.
@@ -32,9 +34,9 @@ Application de révision en kinésithérapie (fiches cliniques, cartes à répé
 
 ## Mettre à jour
 1. Change le numéro de version **aux deux endroits, avec la même valeur** :
-   - `index.html` : `<meta name="app-version" content="2026-11-07-v2e3">`
-   - `sw.js` : `const VERSION = 'fiches-kine-2026-11-07-v2e3';`
-2. Lance le contrôle : `node tools/check.js` (tout doit être ✓ : contenu médical inchangé, code qui se charge, quiz et cartes générés, versions identiques).
+   - `index.html` : `<meta name="app-version" content="2026-11-08-b4fc0410">`
+   - `sw.js` : `const VERSION = 'fiches-kine-2026-11-08-b4fc0410';`
+2. Lance le contrôle : `node tools/check.js` (tout doit être ✓ : contenu médical inchangé, code qui se charge, quiz et cartes générés, guide du bilan intact avec des liens valides, versions identiques). Après une modification voulue du guide du bilan, remplace `REF_BILAN` dans `tools/check.js` par la nouvelle empreinte affichée.
 3. Envoie les fichiers modifiés sur GitHub.
 
 L'app s'ouvre toujours tout de suite avec la version déjà sur le téléphone. Le téléphone installe la nouvelle en arrière-plan, puis un bandeau « Nouvelle version disponible » propose de recharger (il disparaît seul après 10 s ; sinon elle s'applique à l'ouverture suivante).
