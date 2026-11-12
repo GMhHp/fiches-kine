@@ -28,11 +28,12 @@ function makeOptions(good, pool, fallback, keepOrder) {
   if (out.length < 3) return null;
   return shuffle([good].concat(out));
 }
-// Une fiche appartient-elle à une zone ? (zone principale, zone secondaire, ou filtre transversal Pédiatrie)
+// Une fiche appartient-elle à une zone ? (zone principale, zone secondaire, ou filtres transversaux Pédiatrie et Sport)
 function ficheInZone(f, z) {
   if (!f) return false;
   if (!z || z === 'Toutes') return true;
   if (z === 'Pédiatrie') return !!f.pediatrie || f.zone === 'Pédiatrie';
+  if (z === 'Sport') return !!f.sport || f.zone === 'Sport';
   return f.zone === z || f.secondaryZone === z;
 }
 
@@ -61,9 +62,10 @@ function qStems(s) {
 function qStemSet(list) { var out = new Set(); list.forEach(function(s) { qStems(s).forEach(function(k) { out.add(k); }); }); return out; }
 function qOverlap(s, set) { var hit = false; qStems(s).forEach(function(k) { if (set.has(k)) hit = true; }); return hit; }
 // Zones voisines : douleurs projetées et bilans croisés (ex. rachis cervical ↔ épaule)
-var Q_NEIGHBORS = { 'Rachis': ['ATM', 'Épaule', 'Coude', 'Poignet / Main', 'Hanche', 'Neurologie'], 'ATM': ['Rachis'], 'Épaule': ['Rachis', 'Coude'], 'Coude': ['Épaule', 'Poignet / Main', 'Rachis'], 'Poignet / Main': ['Coude', 'Rachis'], 'Hanche': ['Rachis', 'Genou'], 'Genou': ['Hanche', 'Cheville'], 'Cheville': ['Genou', 'Pied'], 'Pied': ['Cheville'], 'Neurologie': ['Rachis', 'Pédiatrie'], 'Pédiatrie': ['Neurologie'] };
+var Q_NEIGHBORS = { 'Rachis': ['ATM', 'Épaule', 'Coude', 'Poignet / Main', 'Hanche', 'Neurologie'], 'ATM': ['Rachis'], 'Épaule': ['Rachis', 'Coude'], 'Coude': ['Épaule', 'Poignet / Main', 'Rachis'], 'Poignet / Main': ['Coude', 'Rachis'], 'Hanche': ['Rachis', 'Genou'], 'Genou': ['Hanche', 'Cheville'], 'Cheville': ['Genou', 'Pied'], 'Pied': ['Cheville'], 'Neurologie': ['Rachis', 'Pédiatrie'], 'Pédiatrie': ['Neurologie'], 'Sport': [] };
 function qNear(f, x) {
   if (!!f.pediatrie && !!x.pediatrie) return true;
+  if (!!f.sport && !!x.sport) return true;   // fiches du sport : voisines entre elles (diagnostics et tests qui se recoupent)
   var zf = [f.zone, f.secondaryZone].filter(Boolean), zx = [x.zone, x.secondaryZone].filter(Boolean);
   return zf.some(function(z) { return zx.indexOf(z) > -1 || zx.some(function(y) { return (Q_NEIGHBORS[z] || []).indexOf(y) > -1; }); });
 }
@@ -101,7 +103,7 @@ function qUnit(s) {
 }
 function qIsNeg(s) { return /^(pas |ne |n'|eviter|jamais|aucun|arret|stop|non |proscri|interdi|contre-indi)/.test(qNorm(clean(s))); }
 var RX_Q_UNIVERSAL_RED = /fievre|febril|\baeg\b|etat general|amaigr|perte de poids|neoplas|cancer|tumeu|metasta|nocturne|non mecanique|infect|septi|immunod|cortico|osteopor|traumat|haute energie|deficit|paralys|parapar|tetrapar|sphinct|selle|perine|incontin|retention|queue de cheval|suicid|thrombo|embol|\btvp\b|dyspn|syncope|lipothym|thorac|cardia|vascul|ischem|\bavc\b|myelopath|medull|fractur|chute|hemorrag|anticoag|\bage\b|progressi|rapide|brutal|aggravation/;
-var RX_Q_UNIVERSAL_DDX = /tumeu|neoplas|metasta|cancer|infect|septi|spondylodisc|osteomyel|fibromyalg|spondylarthr|polyarthr|rhumat|goutte|chondrocalc|psycho|central|nociplast|sensibilis|refer|projet|viscer|vascul|thrombo|\btvp\b|arteri|diabet|neuropath|radicul|sciati|cervic|lomba|coxarthr|stenose|fractur|contusion|hematome/;
+var RX_Q_UNIVERSAL_DDX = /tumeu|neoplas|metasta|cancer|infect|septi|spondylodisc|osteomyel|fibromyalg|spondylarthr|polyarthr|rhumat|goutte|chondrocalc|psycho|psychiatr|depress|central|nociplast|sensibilis|refer|projet|viscer|vascul|thrombo|\btvp\b|arteri|diabet|neuropath|radicul|sciati|cervic|lomba|coxarthr|stenose|fractur|contusion|hematome/;
 var RX_Q_GENERIC_TEST = /\beva\b|\ben\b|numerique|fabq|tampa|\btsk\b|\bhad|\bpcs\b|catastroph|dn4|sf-?36|eq-?5d|qualite de vie|barthel|\bmif\b|\btug\b|timed up|berg|6mwt|6 ?min|test de marche|dynamom|force|goniom|amplitude|mobilite|palpation|inspection|radio|irm|echo|scanner|biolog|testing|reflex|\brot\b|sensibilit|neurolog|lasegue|slump|ulnt|neurodyn|psfs|groc|\bcsi\b|inventaire|questionnaire|score|echelle|enmg|\bemg\b|electromyo|\bvcn\b|conduction nerveuse/;
 var RX_Q_GENERIC_PEC = /exercic|activite|educat|reassur|maintien|charge|conservat|intention|progress|autonom|objectif|centre|antalg|cryo|glace|froid|chaleur|thermo|\btens\b|\bains\b|repos|marche|cardio|aerob|reprise|sport|physique|informat|explic|pronostic|favorable|kinesiophob|psycho|sommeil|poids|hygiene|ergonom|postur|etirem|souplesse|global|gainage|proprioc|equilibre|mobilis|massage|manuel|douleur|chronique|disciplin|orthese|attelle|contention|taping|strapping|immobilis|renforcement|surveill|suivi|lombo|pelvi|tronc|chaine|cinetique|controle|aides? tech|etape|chauss|podolog|semelle|post-?op|operatoire|apres chirurgie|isometr|excentr|concentr|\bhsr\b|pliometr|apprentissage|moteur|amplitude|facteurs? (?:favorisant|causal|contributif|declenchant)|technique de course/;
 var RX_Q_GENERIC_SCALE = /^(eva|en|ens|evn|had|hads|pcs|tsk|fabq|sf-?36|sf-?12|eq-?5d|mif|psfs|groc|csi|dn4|pgic|tug|bbs|berg|irm|rx|echo|emg|enmg|tdm|scanner)$/;
@@ -378,8 +380,10 @@ function buildQuiz(fiches) {
   F.forEach(function(x) { yellows(x).map(qFlag).forEach(function(y) { var n = qNorm(y); if (y.length >= 12 && y.length <= 120 && !RX_Q_UNIVERSAL_RED.test(n) && RX_Q_PSY.test(n) && !RX_Q_SPECIFIC.test(n)) ALL_YELLOWS.push({ id: x.id, t: y }); }); });
 
   // ── A : Identification (résumé sans le nom → pathologie ; distracteurs de la même région d'abord) ──
+  // Fiches « connaissance » (theme : retour au sport, charge…) : ni question, ni distracteur — ce ne sont pas des pathologies
   safe('Identification', function() {
     F.forEach(function(f) {
+      if (f.theme) return;
       var own = qStemsNoLoc(f.nom), acrs = new Set(qAcr(f.nom));
       ddx(f).forEach(function(d) { qStemsNoLoc(d.dx).forEach(function(k) { own.add(k); }); qAcr(d.dx).forEach(function(a) { acrs.add(a); }); });
       var qual = (qNorm(f.nom).match(/\b(commune|chronique|aigue)\b/) || [])[1];
@@ -391,7 +395,7 @@ function buildQuiz(fiches) {
         return hit || qAcr(x.nom).concat(ini ? [ini] : []).some(function(a) { return new RegExp('(^|[^A-Za-z])' + a + '([^A-Za-z]|$)').test(shown); });
       };
       var ok = F.filter(function(x) {
-        if (x.id === f.id || LINKS[f.id].has(x.id) || qIdExcluded(f.id, x.id)) return false;
+        if (x.theme || x.id === f.id || LINKS[f.id].has(x.id) || qIdExcluded(f.id, x.id)) return false;
         if (qual && qNorm(x.nom).indexOf(qual) > -1) return false;
         var hit = false; qStemsNoLoc(x.nom).forEach(function(k) { if (own.has(k)) hit = true; });
         return !hit && !acrHit(x.nom, acrs, own) && !cited(x);

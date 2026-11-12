@@ -4,8 +4,8 @@
 const fs = require('fs'), path = require('path'), vm = require('vm'), crypto = require('crypto');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
-// Empreinte de référence du contenu (fiches + cas), fixée le 07/11/2026
-const REF = '2ca11fe800448556';
+// Empreinte de référence du contenu (fiches + cas), fixée le 11/11/2026 (ajout des fiches du sport) : à changer après une modification voulue
+const REF = '82699566bb3e5d8c';
 // Empreinte du guide « Faire un bilan » (data/bilan.js), fixée le 08/11/2026 : à changer après une modification voulue
 const REF_BILAN = '4daf02603a010b68';
 const dataLines = ['data/fiches.js', 'data/cas.js'].map(f => read(f).split('\n').find(l => /^const (ALL_FICHES|CAS_CLINIQUES) = /.test(l)));
@@ -27,7 +27,7 @@ try {
   scripts.forEach(f => vm.runInContext(read(f), ctx, { filename: f }));
   say(true, scripts.length + ' fichiers de code chargés sans erreur');
   const r = vm.runInContext('({ fiches: ALL_FICHES.length, cas: CAS_CLINIQUES.length, quiz: buildQuiz(ALL_FICHES).length, cartes: buildFlashcards(ALL_FICHES.filter(f => !f.stub)).length })', ctx);
-  say(r.fiches === 87 && r.cas === 57, r.fiches + ' fiches, ' + r.cas + ' cas cliniques');
+  say(r.fiches === 98 && r.cas === 57, r.fiches + ' fiches, ' + r.cas + ' cas cliniques');
   say(r.quiz > 850, r.quiz + ' questions de quiz générées');
   say(r.cartes > 2000, r.cartes + ' cartes générées');
   // Guide du bilan : contenu inchangé, étapes et liens qui mènent quelque part

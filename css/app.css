@@ -301,7 +301,8 @@ mark.hl { background: var(--gold-bg); color: var(--ink); padding: 0 2px; border-
 /* Niveau badge sur les cartes */
 .pcard-lvl { font-size:11.5px; font-weight:600; padding:2px 7px; border-radius:100px; color:#fff; margin-bottom:6px; display:inline-block; }
 /* Pathologie du jour */
-.pdj-card { position:relative; background:var(--card); border:1.5px solid var(--line); border-radius:var(--r); padding:18px 20px; margin-bottom:24px; cursor:pointer; overflow:hidden; transition:transform .15s,box-shadow .15s; }
+.pdj-card { position:relative; display:block; width:100%; text-align:left; font:inherit; color:var(--ink); background:var(--card); border:1.5px solid var(--line); border-radius:var(--r); padding:18px 20px; margin-bottom:24px; cursor:pointer; overflow:hidden; transition:transform .15s,box-shadow .15s; }
+.pdj-label, .pdj-name, .pdj-zone, .pdj-resume { display:block; }
 .pdj-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--lvl-c); }
 .pdj-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px -12px rgba(42,38,34,.3); }
 .pdj-label { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
@@ -446,6 +447,8 @@ body.dark .tabs-wrap::after {
   border: 1px solid rgba(58,107,148,0.25);
   margin-left: 6px; vertical-align: middle;
 }
+/* Fiches vues surtout en kiné du sport (filtre « Sport ») */
+.sport-tag { background: var(--green-bg); color: var(--green); border-color: rgba(79,110,52,0.25); }
 
 .icon { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -728,7 +731,9 @@ body.dark .f1 .flag-yellow .flag-head { color: var(--gold); }
 }
 
 /* ══ V2 étape 3 : apprentissage ══ */
-.today .topbar { margin-bottom: 14px; }
+/* Aujourd'hui : la fiche du jour ouvre l'écran (plus de date, de salutation, de série ni d'objectif) */
+.today { padding-top: 22px; }
+.today .pdj-card { margin-bottom: 18px; }
 .today-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 .today-stat { background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
 .today-stat-v { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; line-height: 1.1; }

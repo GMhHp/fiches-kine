@@ -11,11 +11,11 @@ const NIVEAUX = {
   3: { label: "Niveau 3", desc: "Fréquentes — à maîtriser avant de démarrer", color: "#6a994e", bg: "rgba(106,153,78,0.12)" },
 };
 
-const ZONE_ORDER_DISPLAY = ["Rachis","ATM","Épaule","Coude","Poignet / Main","Hanche","Genou","Cheville","Pied","Neurologie","Pédiatrie"];
-const ZONE_ICONS = {"Rachis":"🦴","ATM":"🦷","Épaule":"💪","Coude":"💪","Poignet / Main":"✋","Poignet":"✋","Hanche":"🦵","Hanche / Bassin":"🦵","Genou":"🦵","Membres inférieurs":"🦵","Cheville":"🦶","Pied":"🦶","Neurologie":"🧠","Pédiatrie":"👶"};
+const ZONE_ORDER_DISPLAY = ["Rachis","ATM","Épaule","Coude","Poignet / Main","Hanche","Genou","Cheville","Pied","Neurologie","Pédiatrie","Sport"];
+const ZONE_ICONS = {"Rachis":"🦴","ATM":"🦷","Épaule":"💪","Coude":"💪","Poignet / Main":"✋","Poignet":"✋","Hanche":"🦵","Hanche / Bassin":"🦵","Genou":"🦵","Membres inférieurs":"🦵","Cheville":"🦶","Pied":"🦶","Neurologie":"🧠","Pédiatrie":"👶","Sport":"🏃"};
 const NIVEAU_COLORS = {1:"#d97642",2:"#c9a227",3:"#6a994e"};
 
-const ZONES = ["Toutes","Rachis","ATM","Épaule","Coude","Poignet / Main","Hanche","Genou","Cheville","Pied","Neurologie","Pédiatrie"];
+const ZONES = ["Toutes","Rachis","ATM","Épaule","Coude","Poignet / Main","Hanche","Genou","Cheville","Pied","Neurologie","Pédiatrie","Sport"];
 const ONGLETS_DEF = [
   { key: "definition", label: "Définition", short: "Définition" }, { key: "flags", label: "Drapeaux", short: "Drapeaux" },
   { key: "ddx", label: "Diag. différentiels", short: "Diagnostics" }, { key: "bilan", label: "Bilan & scores", short: "Bilan" },

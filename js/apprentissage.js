@@ -18,9 +18,8 @@ function hashStr(s) { var h = 5381; s = String(s); for (var i = 0; i < s.length;
 function ficheById(id) { return ALL_FICHES.find(function (f) { return f.id === id; }); }
 
 // ════════════════════════════════════════════════════════════
-//  ACTIVITÉ DU JOUR, SÉRIE, OBJECTIF
+//  ACTIVITÉ DU JOUR, SÉRIE
 // ════════════════════════════════════════════════════════════
-var GOAL_DEFAULT = 20;   // cartes ou questions par jour
 function dayLog() { var d = ljGet('kine_day', null); return d && d.d === today() ? d : { d: today(), cards: 0, qs: 0, news: 0 }; }
 function logActivity(kind, n) {
   var d = dayLog(); d[kind] = (d[kind] || 0) + (n || 1); ljSet('kine_day', d);
@@ -35,9 +34,6 @@ function streak() {
   while (set[d]) { n++; d--; }
   return n;
 }
-function goal() { return ljGet('kine_goal', GOAL_DEFAULT); }
-function setGoal(n) { ljSet('kine_goal', n); render(); }
-function doneToday() { var d = dayLog(); return (d.cards || 0) + (d.qs || 0); }
 
 // ════════════════════════════════════════════════════════════
 //  RÉPÉTITION ESPACÉE DES CARTES (SM-2 simplifié)
@@ -284,19 +280,12 @@ function quizTabLabel(q) { var k = quizTab(q), t = k && ONGLETS_DEF.find(functio
 // ════════════════════════════════════════════════════════════
 function renderToday(app) {
   var c = srsCounts(), newToday = Math.min(c.fresh, c.newLeft), errD = errorsDue().length, errN = errorsCount();
-  var todo = c.due + newToday, g = goal(), done = doneToday(), st = streak(), redo = casToRedo();
-  var pctGoal = Math.min(100, Math.round(100 * done / g));
+  var todo = c.due + newToday, redo = casToRedo();
   var mins = Math.max(1, Math.round((todo * 12 + errD * 25) / 60));
-  var h = new Date().getHours(), hello = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
   var html = '<div class="today">';
-  html += '<div class="topbar"><div class="eyebrow">' + new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + '</div>' +
-    '<h1 class="h1" tabindex="-1">' + hello + ' <em>!</em></h1></div>';
-  // Série et objectif
-  html += '<div class="today-stats">' +
-    '<div class="today-stat"><div class="today-stat-v">🔥 ' + st + '</div><div class="today-stat-l">jour' + (st > 1 ? 's' : '') + ' d\'affilée</div></div>' +
-    '<div class="today-stat"><div class="today-stat-v">' + done + '<small>/' + g + '</small></div><div class="today-stat-l">objectif du jour</div>' +
-    '<div class="today-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pctGoal + '" aria-label="Objectif du jour"><i style="width:' + pctGoal + '%"></i></div></div>' +
-    '</div>';
+  // Ni date ni salutation : la fiche du jour vient en premier (le titre reste pour les lecteurs d'écran)
+  html += '<h1 class="sr-only" tabindex="-1">Aujourd\'hui</h1>';
+  html += renderPathologieDuJour();
   // Révision du jour
   html += '<div class="today-main">';
   if (todo || errD) {
@@ -326,7 +315,6 @@ function renderToday(app) {
     '<button class="today-tile"' + act('startErrorQuiz', true) + '><span class="tt-i" aria-hidden="true">📕</span><span>Carnet d\'erreurs · ' + errN + '</span></button>' +
     '<button class="today-tile"' + act('setView', 'train') + '><span class="tt-i" aria-hidden="true">🎓</span><span>Mode examen</span></button>' +
     '</div></div>';
-  html += '<div class="today-sec">' + renderPathologieDuJour() + '</div>';
   html += '</div>';
   app.innerHTML = html;
 }
@@ -377,9 +365,7 @@ function learnStatsHTML() {
       return '<li><span class="hist-d">' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + '</span><span class="hist-m">' + (M[x.m] || x.m) + (x.z ? ' · ' + esc(x.z) : '') + '</span><span class="hist-s">' + x.s + '/' + x.n + ' · ' + p + ' %</span></li>';
     }).join('') + '</ul>';
   }
-  h += '<label class="cfg-label" style="margin-top:16px">Objectif quotidien</label><div class="filter-row">' + [10, 20, 40, 60].map(function (n) {
-    return '<button class="chip' + (goal() === n ? ' on' : '') + '" aria-pressed="' + (goal() === n) + '"' + act('setGoal', n) + '>' + n + ' / jour</button>';
-  }).join('') + '</div></div>';
+  h += '</div>';
   return h;
 }
 

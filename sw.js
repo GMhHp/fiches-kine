@@ -4,7 +4,7 @@
    À chaque modification de l'app : changer VERSION ici ET <meta name="app-version"> dans index.html
    (même valeur ; « node tools/check.js » vérifie). Le navigateur installe alors la nouvelle version
    en arrière-plan et la page affiche le bandeau « Nouvelle version disponible ». */
-const VERSION = 'fiches-kine-2026-11-08-b4fc0410';
+const VERSION = 'fiches-kine-2026-11-11-396ce9f1';
 const FONTS = 'fiches-kine-fonts';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
