@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Fiches cliniques, quiz, cartes et cas cliniques de kinésithérapie fondés sur les preuves.">
+<meta name="theme-color" content="#f4f1ea">
+<!-- Version : changer aussi VERSION dans sw.js (même valeur, précédée de fiches-kine-) -->
+<meta name="app-version" content="2026-11-20-9733477c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fiches Kiné">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Fiches Kiné — GUILBERT Max-Hugo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spline+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="navbar">
+    <div class="nav-inner">
+      <button class="nav-brand" data-act="setView" data-args="[&quot;today&quot;]"><span class="nb-ico" aria-hidden="true">⚕</span> <span class="nb-txt">Fiches Kiné — GUILBERT Max-Hugo</span></button>
+      <nav class="nav-tabs" aria-label="Navigation principale">
+        <button class="nav-tab" id="tab-today" data-act="setView" data-args="[&quot;today&quot;]"><span class="nt-ico" aria-hidden="true">☀️</span> <span class="nt-lbl">Aujourd’hui</span></button>
+        <button class="nav-tab" id="tab-fiches" data-act="setView" data-args="[&quot;fiches&quot;]"><span class="nt-ico" aria-hidden="true">📖</span> <span class="nt-lbl">Fiches</span></button>
+        <button class="nav-tab" id="tab-tests" data-act="setView" data-args="[&quot;tests&quot;]"><span class="nt-ico" aria-hidden="true">🩺</span> <span class="nt-lbl">Tests</span></button>
+        <button class="nav-tab" id="tab-train" data-act="setView" data-args="[&quot;train&quot;]"><span class="nt-ico" aria-hidden="true">🎯</span> <span class="nt-lbl">S’entraîner</span></button>
+        <button class="nav-tab" id="tab-prog" data-act="setView" data-args="[&quot;prog&quot;]" title="Progression et sauvegarde" aria-label="Progression"><span class="nt-ico" aria-hidden="true">📈</span> <span class="nt-lbl">Progression</span><span class="nt-lbl-short" aria-hidden="true">Progrès</span></button>
+      </nav>
+      <button class="nav-dark" id="darkbtn" data-act="toggleDark" title="Passer en mode sombre" aria-label="Passer en mode sombre">🌙</button>
+    </div>
+  </div>
+  <div class="wrap" id="app"></div>
+  <div id="srLive" class="sr-only" role="status" aria-live="polite"></div>
+
+<script src="data/fiches.js"></script>
+<script src="data/cas.js"></script>
+<script src="data/bilan.js"></script>
+<script src="js/core.js"></script>
+<script src="js/quiz-cartes.js"></script>
+<script src="js/recherche.js"></script>
+<script src="js/tests.js"></script>
+<script src="js/bilan.js"></script>
+<script src="js/vues.js"></script>
+<script src="js/apprentissage.js"></script>
+<script src="js/progression.js"></script>
+<button class="fab-search" id="fabSearch" data-act="fabSearchClick" title="Rechercher" aria-label="Rechercher">🔍</button>
+</body>
+</html>
