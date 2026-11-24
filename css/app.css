@@ -301,7 +301,8 @@ mark.hl { background: var(--gold-bg); color: var(--ink); padding: 0 2px; border-
 /* Niveau badge sur les cartes */
 .pcard-lvl { font-size:11.5px; font-weight:600; padding:2px 7px; border-radius:100px; color:#fff; margin-bottom:6px; display:inline-block; }
 /* Pathologie du jour */
-.pdj-card { position:relative; background:var(--card); border:1.5px solid var(--line); border-radius:var(--r); padding:18px 20px; margin-bottom:24px; cursor:pointer; overflow:hidden; transition:transform .15s,box-shadow .15s; }
+.pdj-card { position:relative; display:block; width:100%; text-align:left; font:inherit; color:var(--ink); background:var(--card); border:1.5px solid var(--line); border-radius:var(--r); padding:18px 20px; margin-bottom:24px; cursor:pointer; overflow:hidden; transition:transform .15s,box-shadow .15s; }
+.pdj-label, .pdj-name, .pdj-zone, .pdj-resume { display:block; }
 .pdj-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--lvl-c); }
 .pdj-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px -12px rgba(42,38,34,.3); }
 .pdj-label { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
@@ -446,6 +447,8 @@ body.dark .tabs-wrap::after {
   border: 1px solid rgba(58,107,148,0.25);
   margin-left: 6px; vertical-align: middle;
 }
+/* Fiches vues surtout en kiné du sport (filtre « Sport ») */
+.sport-tag { background: var(--green-bg); color: var(--green); border-color: rgba(79,110,52,0.25); }
 
 .icon { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -728,7 +731,9 @@ body.dark .f1 .flag-yellow .flag-head { color: var(--gold); }
 }
 
 /* ══ V2 étape 3 : apprentissage ══ */
-.today .topbar { margin-bottom: 14px; }
+/* Aujourd'hui : la fiche du jour ouvre l'écran (plus de date, de salutation, de série ni d'objectif) */
+.today { padding-top: 22px; }
+.today .pdj-card { margin-bottom: 18px; }
 .today-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 .today-stat { background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
 .today-stat-v { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; line-height: 1.1; }
@@ -845,3 +850,48 @@ body.dark .f1 .flag-yellow .flag-head { color: var(--gold); }
 .b-src li > span { min-width: 0; overflow-wrap: anywhere; }
 .b-src .src-link { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
 @media print { .b-tpl-head .chip, .b-links, .bm-entry { display: none !important; } }
+/* ── Tuto « Installer l'app sur l'écran d'accueil » (#/installer) ── */
+.inst { color: var(--ink); max-width: 760px; }
+.inst .topbar { padding-bottom: 18px; }
+.inst-gap { margin: 0 0 14px; }
+.inst-ok { margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--green-bg); color: var(--green); font-size: 15px; font-weight: 600; }
+.inst-now { margin: 0 0 14px; }
+.inst-now .btn-big { width: 100%; justify-content: center; }
+.inst-now-s { margin-top: 8px; text-align: center; font-size: 13px; color: var(--ink-soft); }
+.inst-card { margin-bottom: 14px; }
+.inst-devs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.inst-dev { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 72px; padding: 8px 4px; border-radius: var(--r-sm); border: 1.5px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 500; line-height: 1.2; text-align: center; }
+.inst-dev-i { font-size: 20px; line-height: 1; }
+.inst-dev.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.inst-you { font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--green); }
+.inst-brs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.inst-brs .chip { min-height: 44px; padding: 0 16px; }
+.inst-steps { list-style: none; display: grid; gap: 14px; }
+.inst-steps li { display: flex; align-items: flex-start; gap: 12px; }
+.inst-n { flex-shrink: 0; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 15px; background: var(--accent); color: #fff; font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; }
+body.dark .inst-n { color: #1a1815; }
+.inst-s { flex: 1; min-width: 0; padding-top: 3px; }
+.inst-t { font-size: 15px; line-height: 1.6; color: var(--ink); }
+.inst-d { margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
+.inst-key { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 0 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); font-size: .92em; font-weight: 600; line-height: 1.6; vertical-align: 1px; }
+.inst-key .icon { width: 1.1em; height: 1.1em; flex-shrink: 0; color: var(--blue); stroke-width: 2.1; }
+.inst-key-i { justify-content: center; min-width: 2.1em; min-height: 1.75em; padding: 0 6px; vertical-align: -0.35em; }
+.inst-key-i .icon { width: 1.2em; height: 1.2em; }
+.inst-warn { margin-top: 18px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--gold-bg); color: var(--ink); font-size: 13.5px; line-height: 1.55; }
+.inst-warn .prog-actions { margin-top: 10px; }
+.inst-warn .chip { min-height: 44px; padding: 0 16px; background: var(--card); color: var(--ink); }
+.inst-after { list-style: none; display: grid; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--ink); }
+.inst-after li { position: relative; padding-left: 22px; }
+.inst-after li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.inst-share { margin: 6px 0 8px; text-align: center; }
+.inst-share .chip { min-height: 44px; padding: 0 18px; }
+/* Aujourd'hui : suggestion d'installation, masquable */
+.inst-tip { display: flex; align-items: stretch; margin-bottom: 18px; border: 1.5px dashed var(--line); border-radius: var(--r); background: var(--card); color: var(--ink); }
+.inst-tip-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 14px; border: 0; border-radius: var(--r) 0 0 var(--r); background: none; color: inherit; font: inherit; text-align: left; }
+.inst-tip-ico { font-size: 22px; line-height: 1; }
+.inst-tip-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.inst-tip-t { font-size: 14.5px; font-weight: 600; }
+.inst-tip-s { font-size: 12.5px; color: var(--ink-soft); }
+.inst-tip-x { flex-shrink: 0; width: 48px; border: 0; border-radius: 0 var(--r) var(--r) 0; background: none; color: var(--ink-faint); font-size: 16px; }
+@media (hover: hover) { .inst-tip:hover, .inst-dev:hover { border-color: var(--accent); } .inst-tip-x:hover { color: var(--ink); } }
+@media (max-width: 360px) { .inst-dev { font-size: 12.5px; } .inst-steps li { gap: 10px; } }
