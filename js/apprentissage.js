@@ -286,6 +286,8 @@ function renderToday(app) {
   // Ni date ni salutation : la fiche du jour vient en premier (le titre reste pour les lecteurs d'écran)
   html += '<h1 class="sr-only" tabindex="-1">Aujourd\'hui</h1>';
   html += renderPathologieDuJour();
+  // Dans le navigateur d'un téléphone : suggestion d'installer l'app (masquable)
+  html += installTodayHTML();
   // Révision du jour
   html += '<div class="today-main">';
   if (todo || errD) {

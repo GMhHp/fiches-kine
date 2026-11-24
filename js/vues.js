@@ -5,8 +5,8 @@
 // Dessine l'écran courant puis met l'adresse (#/…) à jour pour le bouton retour
 function render() { renderView(); syncRoute(); }
 function renderView() {
-  // Quiz, Cartes, Cas et Examen sont regroupés sous « S'entraîner » dans la barre ; le guide du bilan sous « Tests »
-  var navOf = { quiz: 'train', flash: 'train', cas: 'train', train: 'train', bilan: 'tests' };
+  // Quiz, Cartes, Cas et Examen sont regroupés sous « S'entraîner » dans la barre ; le guide du bilan sous « Tests » ; le tuto d'installation sous « Progression »
+  var navOf = { quiz: 'train', flash: 'train', cas: 'train', train: 'train', bilan: 'tests', install: 'prog' };
   ["today", "fiches", "tests", "train", "prog"].forEach(v => { var el=document.getElementById("tab-"+v); if(el) { var on = (navOf[state.view] || state.view) === v; el.classList.toggle("on", on); if (on) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current"); } });
   const app = document.getElementById("app");
   if (state.view === "today") return renderToday(app);
@@ -15,6 +15,7 @@ function renderView() {
   if (state.view === "cas") return renderCas(app);
   if (state.view === "flash") return renderFlash(app);
   if (state.view === "prog") return renderProg(app);
+  if (state.view === "install") return renderInstall(app);
   if (state.view === "tests" && !state.openId) return renderTests(app);
   if (state.view === "bilan" && !state.openId) return renderBilan(app);
   if (state.openId) return renderDetail(app, ALL_FICHES.find(f => f.id === state.openId));
@@ -32,19 +33,22 @@ function getPathologieDuJour() {
 function renderPathologieDuJour() {
   var f = getPathologieDuJour();
   var N = NIVEAUX[f.niveau];
-  return '<div class="pdj-card" ' + act('openFiche', f.id) + ' style="--lvl-c:'+N.color+'">' +
-    '<div class="pdj-label">✨ Pathologie du jour</div>' +
-    '<div class="pdj-name">'+esc(f.nom)+'</div>' +
-    '<div class="pdj-zone">'+esc(f.zone)+' · <span class="pdj-lvl"><i style="background:'+N.color+'"></i>'+N.label+'</span></div>' +
-    '<div class="pdj-resume">'+esc(qCut(f.resume,120))+'</div>' +
-    '</div>';
+  // Vrai bouton (clavier, lecteur d'écran) : premier élément de l'écran Aujourd'hui
+  return '<button type="button" class="pdj-card" ' + act('openFiche', f.id) + ' style="--lvl-c:'+N.color+'">' +
+    '<span class="pdj-label">✨ Fiche du jour</span>' +
+    '<span class="pdj-name">'+esc(f.nom)+'</span>' +
+    '<span class="pdj-zone">'+esc(f.zone)+' · <span class="pdj-lvl"><i style="background:'+N.color+'"></i>'+N.label+'</span></span>' +
+    '<span class="pdj-resume">'+esc(qCut(f.resume,120))+'</span>' +
+    '</button>';
 }
 
+// Étiquette de source sur une carte : 28 caractères au plus, coupée proprement avec « … »
+function tagCut(t) { t = String(t || '').trim(); return t.length > 28 ? t.slice(0, 27).replace(/[\s,;:+\/—–-]+$/, '') + '…' : t; }
 function renderFichesList(app) {
   app.innerHTML =
     '<div class="topbar"><div class="eyebrow">GUILBERT Max-Hugo · Kinésithérapie · EBP</div>' +
     '<h1 class="h1">Fiches cliniques <em>musculo-squelettiques</em></h1>' +
-    '<p class="sub">Tes pathologies prioritaires classées par fréquence, avec définition, drapeaux, diagnostics différentiels, bilan, prise en charge EBP, pronostic et recommandations.</p></div>' +
+    '<p class="sub">Tes pathologies prioritaires classées par fréquence, avec définition, drapeaux, diagnostics différentiels, bilan, prise en charge EBP, pronostic et recommandations. Filtre « Sport » : pathologies du sportif et connaissances clés (retour au sport, prévention, bord de terrain).</p></div>' +
     '<div class="controls"><div class="searchbox"><svg class="icon si" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
     '<input type="text" id="searchInput" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Rechercher dans les fiches" placeholder="Pathologie, test, signe, traitement…" value="' + esc(state.query) + '">' +
     '<button class="search-clear" type="button" aria-label="Effacer la recherche" ' + act('clearSearch') + '' + (state.query ? '' : ' hidden') + '>✕</button>' +
@@ -91,18 +95,18 @@ function renderFichesBody() {
   } else {
     var filtered = pool;
     html += renderPathologieDuJour();
-    html += '<div class="count"><span aria-hidden="true">🔍</span> '+filtered.length+' pathologie'+(filtered.length>1?'s':'')+
+    html += '<div class="count"><span aria-hidden="true">🔍</span> '+filtered.length+' fiche'+(filtered.length>1?'s':'')+
       ((state.zone!=='Toutes'||state.favsOnly)?' <button class="chip" style="padding:3px 10px;margin-left:4px" ' + act('resetFilters') + '>✕ Réinitialiser</button>':'')+
       '</div>';
     if (filtered.length === 0) {
-      html += '<div class="empty"><p>Aucune pathologie ne correspond.</p></div>';
+      html += '<div class="empty"><p>Aucune fiche ne correspond.</p></div>';
     } else {
       // « Toutes » : une fiche à double casquette apparaît dans ses deux zones.
-      // Zone précise : un seul groupe. Pédiatrie : regroupement par zone principale, sans doublon.
+      // Zone précise : un seul groupe. Pédiatrie et Sport : regroupement par zone principale, sans doublon.
       var groups;
       if (state.zone === 'Toutes') {
         groups = ZONE_ORDER_DISPLAY.map(function(z){ return { zone: z, items: filtered.filter(function(f){ return f.zone === z || f.secondaryZone === z; }) }; });
-      } else if (state.zone === 'Pédiatrie') {
+      } else if (state.zone === 'Pédiatrie' || state.zone === 'Sport') {
         groups = ZONE_ORDER_DISPLAY.map(function(z){ return { zone: z, items: filtered.filter(function(f){ return f.zone === z; }) }; });
       } else {
         groups = [{ zone: state.zone, items: filtered }];
@@ -116,7 +120,7 @@ function renderFichesBody() {
       });
     }
   }
-  html += '<div class="foot-note">'+ALL_FICHES.length+' pathologies · '+ALL_FICHES.filter(function(f){return f.has.verified;}).length+' sourcées HAS · '+state.mastered.size+' maîtrisées</div>';
+  html += '<div class="foot-note">'+ALL_FICHES.length+' fiches · '+ALL_FICHES.filter(function(f){return f.has.verified;}).length+' sourcées HAS · '+state.mastered.size+' maîtrisées</div>';
   body.innerHTML = html;
 }
 
@@ -128,12 +132,12 @@ function cardHTML(f, hl, m) {
   const hasHl = Array.isArray(hl) ? hl.length > 0 : !!hl;
   return '<div class="pcard-wrap"><button class="pcard" style="--lvl-c:' + N.color + '" ' + open + '>' +
     '<div class="pcard-top"><div class="pcard-name">' + (hasHl ? rich(f.nom, hl) : esc(f.nom)) + '</div></div>' +
-    '<div class="pcard-zone">' + esc(f.zone) + (f.secondaryZone ? ' · ' + esc(f.secondaryZone) : '') + (f.pediatrie && f.zone !== 'Pédiatrie' ? '<span class="ped-tag">🧒 Pédiatrie</span>' : '') + '</div>' +
+    '<div class="pcard-zone">' + esc(f.zone) + (f.secondaryZone ? ' · ' + esc(f.secondaryZone) : '') + (f.pediatrie && f.zone !== 'Pédiatrie' ? '<span class="ped-tag">🧒 Pédiatrie</span>' : '') + (f.sport && f.zone !== 'Sport' ? '<span class="ped-tag sport-tag">🏃 Sport</span>' : '') + '</div>' +
     (hitTab
       ? '<div class="pcard-hit"><span class="pcard-hit-tab">' + esc(sTabLabel(hitTab)) + '</span> ' + sSnippet(m.hit.raw, hl) + '</div>'
       : '<div class="pcard-resume">' + rich(f.resume, hl) + '</div>') +
     '<div class="pcard-foot">' +
-    (f.has.tier===1 ? '<span class="has-tag tier1">✓ HAS</span>' : f.has.tier===2 ? '<span class="has-tag tier2">📖 ' + esc(f.has.label.replace(/\s*\(.*?\)/g,'').replace(/HAS\s*/i,'').trim().slice(0,28)) + '</span>' : '<span class="has-tag tier3">' + esc(f.has.label.slice(0,28)) + '</span>') +
+    (f.has.tier===1 ? '<span class="has-tag tier1">✓ HAS</span>' : f.has.tier===2 ? '<span class="has-tag tier2">📖 ' + esc(tagCut(f.has.label.replace(/\s*\(.*?\)/g,'').replace(/HAS\s*/i,''))) + '</span>' : '<span class="has-tag tier3">' + esc(tagCut(f.has.label)) + '</span>') +
     (mast ? '<span class="mastered-dot">✓ maîtrisée</span>' : '') +
     '</div></button>' +
     '<button type="button" class="pcard-fav' + (fav ? ' on' : '') + '" data-fav="' + f.id + '" aria-pressed="' + fav + '" aria-label="Favori : ' + esc(f.nom) + '" ' + act('toggleFav', f.id) + '><span aria-hidden="true">' + (fav ? '★' : '☆') + '</span></button></div>';
@@ -172,7 +176,7 @@ function renderDetail(app, f) {
   const N = NIVEAUX[f.niveau];
   const fav = state.favs.has(f.id), mast = state.mastered.has(f.id);
   const hl = state.view === "tests" ? tState().q.trim() : state.view === "bilan" ? "" : state.query.trim();
-  const listLbl = state.view === 'tests' ? 'Tests cliniques' : state.view === 'bilan' ? 'Méthode du bilan' : 'Toutes les pathologies';
+  const listLbl = state.view === 'tests' ? 'Tests cliniques' : state.view === 'bilan' ? 'Méthode du bilan' : 'Toutes les fiches';
   const nomQ = esc(f.nom).replace(/'/g, "");
 
   const nav = state.ficheHistory.length
@@ -197,7 +201,7 @@ function renderDetail(app, f) {
     '<div class="d-head">' +
       '<h2 class="d-title">' + esc(f.nom) + '</h2>' +
       '<div class="d-badges">' +
-        '<span class="badge badge-zone">' + esc(f.zone) + '</span>' + (f.secondaryZone ? '<span class="badge badge-zone">' + esc(f.secondaryZone) + '</span>' : '') +
+        '<span class="badge badge-zone">' + esc(f.zone) + '</span>' + (f.secondaryZone ? '<span class="badge badge-zone">' + esc(f.secondaryZone) + '</span>' : '') + (f.sport && f.zone !== 'Sport' ? '<span class="badge badge-zone">Sport</span>' : '') +
         '<span class="badge badge-lvl l' + f.niveau + '">' + N.label + '</span>' +
         (f.has.tier === 1 ? '<span class="badge badge-has-ok">' + F1_ICO.check + 'RBP HAS</span>'
           : f.has.tier === 2 ? '<span class="badge badge-has-warn">' + F1_ICO.book + esc(f.has.label) + '</span>'

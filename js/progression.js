@@ -133,26 +133,183 @@ function mergeBackup(d) {
   return res;
 }
 
-// Installation
-window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installPromptEvt = e; if (state.view === 'prog') render(); });
-window.addEventListener('appinstalled', function () { installPromptEvt = null; toast('✓ App installée.'); if (state.view === 'prog') render(); });
+// Installation : l'invite du navigateur (Chrome, Edge, Samsung Internet) est gardée pour un bouton « Installer »
+var INSTALL_VIEWS = ['prog', 'install', 'today'];
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installPromptEvt = e; if (INSTALL_VIEWS.indexOf(state.view) > -1) render(); });
+window.addEventListener('appinstalled', function () { installPromptEvt = null; toast('✓ App installée.'); if (INSTALL_VIEWS.indexOf(state.view) > -1) render(); });
 function doInstall() {
   if (!installPromptEvt) return;
   var evt = installPromptEvt; installPromptEvt = null;
   evt.prompt();
   Promise.resolve(evt.userChoice).then(function () { render(); }, function () { render(); });
 }
+function isOnline() { return /^https?:$/.test(location.protocol); }
+// Safari sur Mac : l'app web n'y partage pas non plus ses données avec le navigateur
+function isMacSafari() { var ua = navigator.userAgent || ''; return !isIOS() && /Macintosh/.test(ua) && /Safari\//.test(ua) && !/Chrome|Chromium|Edg\/|OPR\/|Firefox/.test(ua); }
 function installHTML() {
-  if (!/^https?:$/.test(location.protocol)) return '<p class="prog-note">📁 L\'app est ouverte comme fichier local : l\'installation et le mode hors ligne fonctionneront une fois l\'app en ligne (GitHub Pages).</p>';
-  if (isStandalone()) return '<p class="prog-ok">✓ App installée sur cet appareil' + (navigator.serviceWorker && navigator.serviceWorker.controller ? ' — utilisable hors ligne.' : '.') + '</p>';
-  var h = '';
-  if (installPromptEvt) h += '<div class="prog-actions" style="margin-bottom:14px"><button class="btn-primary" ' + act('doInstall') + '>📲 Installer l\'app</button></div>';
-  h += '<ul class="prog-steps">' +
-    '<li><strong>iPhone</strong> : dans Safari, bouton Partager (dans le menu « ⋯ » sur les iOS récents) → « Sur l\'écran d\'accueil ».</li>' +
-    '<li><strong>Android</strong> : menu ⋮ de Chrome → « Installer l\'application ».</li>' +
-    '<li><strong>Ordinateur</strong> : icône d\'installation dans la barre d\'adresse (Chrome, Edge).</li></ul>' +
-    '<p class="prog-note">⚠️ Sur iPhone, l\'app installée a sa propre mémoire, séparée de Safari : <strong>exporte ta progression ici avant d\'installer</strong>, puis restaure-la dans l\'app.</p>';
-  return h;
+  if (!isOnline()) return '<p class="prog-note">📁 L\'app est ouverte comme fichier local : l\'installation et le mode hors ligne fonctionneront une fois l\'app en ligne (GitHub Pages).</p>';
+  if (isStandalone()) return '<p class="prog-ok">✓ App installée sur cet appareil' + (navigator.serviceWorker && navigator.serviceWorker.controller ? ' — utilisable hors ligne.' : '.') + '</p>' +
+    '<div class="prog-actions" style="margin-top:12px"><button class="chip" ' + act('setView', 'install') + '>Voir le tuto</button><button class="chip" ' + act('shareInstallLink') + '>🔗 Partager le tuto</button></div>';
+  return '<p class="prog-txt">Une icône sur ton écran d\'accueil, l\'app en plein écran et utilisable hors ligne.</p>' +
+    '<div class="prog-actions">' + (installPromptEvt ? '<button class="btn-primary" ' + act('doInstall') + '>📲 Installer l\'app</button>' : '') +
+    '<button class="' + (installPromptEvt ? 'chip' : 'btn-primary') + '" ' + act('setView', 'install') + '>Voir le tuto pas à pas</button></div>' +
+    (isIOS() || isMacSafari() ? '<p class="prog-note">⚠️ L\'app installée a sa propre mémoire, séparée du navigateur : <strong>exporte ta progression ici avant d\'installer</strong>, puis restaure-la dans l\'app.</p>' : '');
+}
+
+// ════════════════════════════════════════════════════════════
+//  TUTO « INSTALLER L'APP SUR L'ÉCRAN D'ACCUEIL » (#/installer)
+// ════════════════════════════════════════════════════════════
+// Étapes vérifiées le 24/11/2026 : Apple (iPhone iOS 26, Mac), Google (Chrome), Microsoft (Edge)
+var INSTALL_TIP_KEY = 'fiches_kine_tuto_ferme';   // hors sauvegarde (pas de préfixe kine_)
+var INST_ICO = {
+  share: '<path d="M12 3v11.5"/><path d="m8 7 4-4 4 4"/><path d="M8.5 10H7a2.5 2.5 0 0 0-2.5 2.5v6A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-6A2.5 2.5 0 0 0 17 10h-1.5"/>',
+  more: '<circle cx="12" cy="12" r="9.5"/><circle cx="7.6" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="16.4" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
+  dotsV: '<circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  add: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/>',
+  install: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8.5 20h7"/><path d="M12 7v5.5"/><path d="m9.5 10 2.5 2.5 2.5-2.5"/>'
+};
+// Bouton à toucher, dessiné comme dans le navigateur (icône + libellé ; icône seule : nom lu par les lecteurs d'écran)
+function instKey(ico, label, sr) {
+  return '<span class="inst-key' + (label ? '' : ' inst-key-i') + '">' + (ico ? '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">' + INST_ICO[ico] + '</svg>' : '') +
+    (label ? '<span>' + label + '</span>' : '<span class="sr-only">' + (sr || '') + '</span>') + '</span>';
+}
+var INST_GUIDE = {
+  ios: { ico: '📱', label: 'iPhone / iPad', brs: [
+    { k: 'safari', label: 'Safari', steps: [
+      ['Dans Safari, touche ' + instKey('more', '', 'Plus') + ' à droite de la barre d\'adresse, puis ' + instKey('share', 'Partager') + '.',
+        'Si le bouton ' + instKey('share', '', 'Partager') + ' est déjà visible dans la barre d\'outils, touche-le directement.'],
+      ['Fais défiler la liste et touche ' + instKey('add', 'Sur l\'écran d\'accueil') + '.',
+        'Pas dans la liste ? Tout en bas, touche « Modifier les actions » et ajoute-le.'],
+      ['Laisse activée l\'option qui l\'ouvre comme une <strong>app web</strong>, puis touche ' + instKey('', 'Ajouter') + '.',
+        'Avant iOS 26, il n\'y a pas d\'option : touche simplement « Ajouter ».'],
+      ['L\'icône <strong>Fiches Kiné</strong> est sur ton écran d\'accueil : ouvre l\'app depuis là.']
+    ]},
+    { k: 'autre', label: 'Chrome, Edge, Firefox…', steps: [
+      ['Touche ' + instKey('share', 'Partager') + ', dans la barre d\'adresse ou dans le menu du navigateur.'],
+      ['Touche ' + instKey('add', 'Sur l\'écran d\'accueil') + ', puis ' + instKey('', 'Ajouter') + '.',
+        'Possible depuis iOS 16.4. Si l\'option n\'apparaît pas, ouvre cette page dans Safari.'],
+      ['L\'icône <strong>Fiches Kiné</strong> est sur ton écran d\'accueil : ouvre l\'app depuis là.']
+    ]}
+  ]},
+  android: { ico: '🤖', label: 'Android', brs: [
+    { k: 'chrome', label: 'Chrome', steps: [
+      ['Touche le menu ' + instKey('dotsV', '', 'Plus') + ' en haut à droite.'],
+      ['Touche ' + instKey('add', 'Ajouter à l\'écran d\'accueil') + '.',
+        'Si le menu propose directement « Installer l\'appli », c\'est la même chose.'],
+      ['Choisis ' + instKey('', 'Installer') + ', puis confirme.',
+        'Chrome peut aussi te le proposer de lui-même en bas de l\'écran : accepte.'],
+      ['L\'icône <strong>Fiches Kiné</strong> arrive sur l\'écran d\'accueil et dans la liste des applis.']
+    ]},
+    { k: 'samsung', label: 'Samsung Internet', steps: [
+      ['Si une icône d\'installation apparaît dans la barre d\'adresse, touche-la et passe à l\'étape 3.'],
+      ['Sinon, touche ' + instKey('menu', '', 'Menu') + ' en bas à droite → ' + instKey('', 'Ajouter la page à') + ' → ' + instKey('', 'Écran d\'accueil') + '.'],
+      ['Touche ' + instKey('', 'Ajouter') + ' : l\'icône <strong>Fiches Kiné</strong> arrive sur l\'écran d\'accueil.']
+    ]}
+  ]},
+  desktop: { ico: '💻', label: 'Ordinateur', brs: [
+    { k: 'chrome', label: 'Chrome ou Edge', steps: [
+      ['Clique sur l\'icône ' + instKey('install', '', 'Installer') + ' à droite de la barre d\'adresse, puis sur ' + instKey('', 'Installer') + '.'],
+      ['Pas d\'icône ? <strong>Chrome</strong> : menu ⋮ → « Caster, enregistrer et partager » → « Installer… ».',
+        '<strong>Edge</strong> : menu « … » → « Autres outils » → « Apps » → « Installer ce site en tant qu\'application ».'],
+      ['L\'app s\'ouvre dans sa propre fenêtre et se range avec tes autres applications.']
+    ]},
+    { k: 'mac', label: 'Safari (Mac)', steps: [
+      ['Dans Safari, menu <strong>Fichier</strong> → ' + instKey('', 'Ajouter au Dock') + '.',
+        'Ou bouton ' + instKey('share', '', 'Partager') + ' → « Ajouter au Dock ». Il faut macOS Sonoma 14 ou plus récent.'],
+      ['Garde le nom <strong>Fiches Kiné</strong> et clique sur ' + instKey('', 'Ajouter') + '.'],
+      ['L\'app arrive dans le Dock et dans le dossier Applications de ton dossier personnel.']
+    ]}
+  ]}
+};
+// Appareil et navigateur détectés : présélectionnés dans le tuto
+function instDetect() {
+  var ua = navigator.userAgent || '';
+  if (isIOS()) return { dev: 'ios', br: /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua) ? 'autre' : 'safari' };
+  if (/Android/i.test(ua)) return { dev: 'android', br: /SamsungBrowser/i.test(ua) ? 'samsung' : 'chrome' };
+  return { dev: 'desktop', br: isMacSafari() ? 'mac' : 'chrome' };
+}
+// Navigateur intégré d'une autre app (lien ouvert depuis Instagram, Messenger…) : pas d'installation possible
+function instInApp() { return /FBAN|FBAV|FB_IAB|Instagram|Snapchat|LinkedInApp|musical_ly|TikTok|BytedanceWebview|Line\//i.test(navigator.userAgent || ''); }
+
+function renderInstall(app) {
+  var det = instDetect(), inst = isStandalone(), online = isOnline();
+  var dev = INST_GUIDE[state.instDev] ? state.instDev : det.dev, G = INST_GUIDE[dev];
+  var B = G.brs.find(function (b) { return b.k === state.instBr; }) || G.brs.find(function (b) { return dev === det.dev && b.k === det.br; }) || G.brs[0];
+  var h = '<div class="inst"><div class="topbar"><div class="eyebrow">Tuto</div>' +
+    '<h1 class="h1" tabindex="-1">Installer l\'app sur ton écran d\'accueil</h1>' +
+    '<p class="sub">Une icône comme une vraie appli, l\'app en plein écran, et tout fonctionne même sans réseau. Ça prend 30 secondes.</p></div>';
+  if (!online) h += '<p class="prog-note inst-gap">📁 L\'app est ouverte comme fichier local : l\'installation fonctionnera une fois l\'app en ligne (GitHub Pages).</p>';
+  else if (inst) h += '<p class="inst-ok">✓ C\'est fait : tu es dans l\'app installée.</p>';
+  else {
+    if (instInApp()) h += '<div class="inst-warn inst-gap"><strong>Tu es dans le navigateur d\'une autre app</strong> (Instagram, Messenger, Snapchat…) : l\'installation n\'y est pas possible. Ouvre d\'abord cette page dans Safari ou Chrome, avec l\'option prévue dans le menu de l\'app.</div>';
+    if (installPromptEvt) h += '<div class="inst-now"><button class="btn-primary btn-big" ' + act('doInstall') + '>📲 Installer maintenant</button><p class="inst-now-s">Ton navigateur sait le faire en un geste. Sinon, suis les étapes.</p></div>';
+  }
+  h += '<section class="quiz-config inst-card" aria-labelledby="instStepsT"><h2 class="cfg-label" id="instStepsT">' + (inst ? 'Pour aider quelqu\'un, choisis son appareil' : 'Les étapes') + '</h2>' +
+    '<div class="inst-devs" role="group" aria-label="Appareil">' + Object.keys(INST_GUIDE).map(function (k) {
+      var on = k === dev;
+      return '<button type="button" class="inst-dev' + (on ? ' on' : '') + '" data-dev="' + k + '" aria-pressed="' + on + '" ' + act('setInstallDev', k) + '>' +
+        '<span class="inst-dev-i" aria-hidden="true">' + INST_GUIDE[k].ico + '</span><span>' + INST_GUIDE[k].label + '</span>' +
+        (k === det.dev && online ? '<span class="inst-you">ton appareil</span>' : '') + '</button>';
+    }).join('') + '</div>' +
+    '<div class="inst-brs" role="group" aria-label="Navigateur">' + G.brs.map(function (b) {
+      var on = b.k === B.k;
+      return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-br="' + b.k + '" aria-pressed="' + on + '" ' + act('setInstallBr', b.k) + '>' + b.label + '</button>';
+    }).join('') + '</div>' +
+    '<ol class="inst-steps">' + B.steps.map(function (s, i) {
+      return '<li><span class="inst-n">' + (i + 1) + '</span><div class="inst-s"><p class="inst-t">' + s[0] + '</p>' + (s[1] ? '<p class="inst-d">' + s[1] + '</p>' : '') + '</div></li>';
+    }).join('') + '</ol>';
+  if (!inst && (dev === 'ios' || B.k === 'mac')) h += '<div class="inst-warn"><strong>Ta progression ne suit pas toute seule.</strong> ' +
+    (dev === 'ios' ? 'Sur iPhone et iPad' : 'Sur Mac avec Safari') + ', l\'app installée a sa propre mémoire, séparée du navigateur. Exporte ta progression avant d\'installer, puis restaure-la dans l\'app (Progression → Restaurer).' +
+    '<div class="prog-actions"><button class="chip" ' + act('exportProgress') + '>💾 Exporter ma progression</button></div></div>';
+  h += '</section>';
+  h += '<section class="quiz-config inst-card" aria-labelledby="instAfterT"><h2 class="cfg-label" id="instAfterT">Après l\'installation</h2><ul class="inst-after">' +
+    '<li>Ouvre toujours l\'app depuis son icône.</li>' +
+    '<li>Ouvre-la une première fois avec du réseau : ensuite, elle marche même en mode avion.</li>' +
+    '<li>Mise à jour : quand « Nouvelle version disponible » s\'affiche, touche « Recharger ».</li>' +
+    '<li>Ta progression reste sur l\'appareil : exporte-la de temps en temps (Progression → Sauvegarder).</li></ul></section>';
+  if (online) h += '<div class="inst-share"><button class="chip" ' + act('shareInstallLink') + '>🔗 Partager ce tuto</button></div>';
+  app.innerHTML = instFr(h + '</div>');
+}
+// Typographie française : espaces insécables avant « : ; ? ! » et à l'intérieur des guillemets (jamais dans les balises)
+function instFr(s) {
+  return s.split(/(<[^>]+>)/).map(function (p) { return p.charAt(0) === '<' ? p : p.replace(/« /g, '«\u00a0').replace(/ »/g, '\u00a0»').replace(/ ([:;?!])/g, '\u00a0$1'); }).join('');
+}
+// Changer d'appareil ou de navigateur : même position à l'écran, le focus reste sur le bouton choisi
+function setInstallDev(k) { state.instDev = k; state.instBr = null; reInstall('[data-dev="' + k + '"]'); }
+function setInstallBr(k) { state.instBr = k; reInstall('[data-br="' + k + '"]'); }
+function reInstall(sel) {
+  var y = window.scrollY;
+  renderInstall(appEl());
+  window.scrollTo(0, y);
+  var b = document.querySelector(sel); if (b) b.focus({ preventScroll: true });
+}
+// Lien direct vers le tuto, à envoyer à quelqu'un
+function shareInstallLink() {
+  var url = location.origin + location.pathname + '#/installer';
+  var copy = function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast('✓ Lien du tuto copié.'); }, function () { toast(url); });
+    else toast(url);
+  };
+  if (navigator.share && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+    navigator.share({ title: 'Fiches Kiné', text: 'Installe Fiches Kiné sur ton écran d\'accueil :', url: url }).catch(function (e) { if (!e || e.name !== 'AbortError') copy(); });
+    return;
+  }
+  copy();
+}
+// Aujourd'hui : petite suggestion (téléphone ou tablette, dans le navigateur), masquable
+function installTodayHTML() {
+  if (!isOnline() || isStandalone() || lsGet(INSTALL_TIP_KEY, null) === '1') return '';
+  if (!(isIOS() || /Android/i.test(navigator.userAgent || ''))) return '';
+  return '<div class="inst-tip"><button type="button" class="inst-tip-main" ' + act('setView', 'install') + '>' +
+    '<span class="inst-tip-ico" aria-hidden="true">📲</span><span class="inst-tip-txt"><span class="inst-tip-t">Installe l\'app sur ton écran d\'accueil</span>' +
+    '<span class="inst-tip-s">Plein écran, hors ligne · tuto en 30 s</span></span></button>' +
+    '<button type="button" class="inst-tip-x" ' + act('hideInstallTip') + ' aria-label="Ne plus afficher cette suggestion">✕</button></div>';
+}
+function hideInstallTip() {
+  lsSet(INSTALL_TIP_KEY, '1'); render();
+  toast('Le tuto reste dans Progression → Installer l\'app.');
+  var b = document.querySelector('.pdj-card'); if (b) b.focus({ preventScroll: true });
 }
 function offlineStatus() {
   if (!/^https?:$/.test(location.protocol)) return '';

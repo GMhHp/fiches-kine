@@ -29,7 +29,7 @@ function sIndex() {
     var E = [], O = f.onglets || {};
     var add = function (tab, text, w) { if (text) E.push({ tab: tab, raw: String(text), n: ' ' + sNorm(text) + ' ', w: w }); };
     add('_nom', f.nom, 100);
-    add('_zone', f.zone + (f.secondaryZone ? ' ' + f.secondaryZone : ''), 40);
+    add('_zone', f.zone + (f.secondaryZone ? ' ' + f.secondaryZone : '') + (f.sport && f.zone !== 'Sport' ? ' Sport' : ''), 40);
     add('_resume', f.resume, 30);
     (f.stats || []).forEach(function (s) { add('_resume', s.val + ' ' + s.lbl, 15); });
     ['definition', 'bilan', 'pec', 'pronostic'].forEach(function (k) { ((O[k] && O[k].blocs) || []).forEach(function (b) { add(k, b.titre, 12); (b.items || []).forEach(function (i) { add(k, i, 10); }); }); });
@@ -143,9 +143,9 @@ function closeFiche() {
 // ════════════════════════════════════════════════════════════
 //  ADRESSES (#/…) : bouton retour Android / geste retour iPhone, lien direct, rechargement
 // ════════════════════════════════════════════════════════════
-// #/fiches · #/fiches/<id>/<onglet> · #/tests · #/tests/<id> · #/quiz · #/cartes · #/cas · #/progression
+// #/fiches · #/fiches/<id>/<onglet> · #/tests · #/tests/<id> · #/quiz · #/cartes · #/cas · #/progression · #/installer (tuto)
 // #/bilan/<section> · #/bilan/<section>/<id>/<onglet> (fiche ouverte depuis le guide du bilan)
-var ROUTE_VIEWS = { aujourdhui: 'today', fiches: 'fiches', tests: 'tests', bilan: 'bilan', quiz: 'quiz', cartes: 'flash', cas: 'cas', entrainer: 'train', progression: 'prog' };
+var ROUTE_VIEWS = { aujourdhui: 'today', fiches: 'fiches', tests: 'tests', bilan: 'bilan', quiz: 'quiz', cartes: 'flash', cas: 'cas', entrainer: 'train', progression: 'prog', installer: 'install' };
 var _routing = false, _lastRoute = null;
 function routeOf() {
   var name = Object.keys(ROUTE_VIEWS).find(function (k) { return ROUTE_VIEWS[k] === state.view; }) || 'aujourdhui';

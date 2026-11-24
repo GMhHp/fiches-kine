@@ -361,12 +361,12 @@ function tPid(z, f) { return 'tp-' + ZONE_ORDER_DISPLAY.indexOf(z) + '-' + f.id;
 function tPathoHTML(S) {
   var h = '';
   (S.zone === 'Toutes' ? ZONE_ORDER_DISPLAY : [S.zone]).forEach(function (z) {
-    var fs = ALL_FICHES.filter(function (f) { return !f.stub && ficheInZone(f, z); })
+    var fs = ALL_FICHES.filter(function (f) { return !f.stub && (S.zone === 'Toutes' && z === 'Sport' ? f.zone === 'Sport' : ficheInZone(f, z)); })
       .map(function (f) { return { f: f, items: tPathoItems(f, S.type) }; })
       .filter(function (e) { return e.items.length; })
       .sort(function (a, b) { return a.f.nom.localeCompare(b.f.nom, 'fr', { sensitivity: 'base' }); });
     if (!fs.length) return;
-    h += '<section class="tt-zone"><div class="zone-head"><span class="zone-icon" aria-hidden="true">' + (ZONE_ICONS[z] || '📌') + '</span><h2 class="zone-name">' + esc(z) + '</h2><span class="zone-count">' + fs.length + ' pathologie' + (fs.length > 1 ? 's' : '') + '</span><span class="lvl-line"></span></div><div class="tp-list">';
+    h += '<section class="tt-zone"><div class="zone-head"><span class="zone-icon" aria-hidden="true">' + (ZONE_ICONS[z] || '📌') + '</span><h2 class="zone-name">' + esc(z) + '</h2><span class="zone-count">' + fs.length + ' fiche' + (fs.length > 1 ? 's' : '') + '</span><span class="lvl-line"></span></div><div class="tp-list">';
     fs.forEach(function (e) {
       var id = z + '|' + e.f.id, open = !!S.openP[id], did = tPid(z, e.f);
       h += '<div class="tp' + (open ? ' open' : '') + '" data-pid="' + esc(id) + '">' +
